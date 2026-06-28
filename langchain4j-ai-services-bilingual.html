@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LangChain4j AI Services — 中英双语</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f9f6f0;
+  --bg-card: #f4efe5;
+  --bg-code: #ece4d7;
+  --text: #2c2416;
+  --text-secondary: #6b5e4a;
+  --text-muted: #9b8d7a;
+  --accent: #c44536;
+  --accent-soft: #e8d5c4;
+  --accent-green: #5b7b4a;
+  --accent-blue: #4a6b7b;
+  --border: #d9cebc;
+  --border-light: #e8dfd0;
+  --shadow: 0 1px 3px rgba(44,36,22,0.06);
+  --shadow-lg: 0 4px 24px rgba(44,36,22,0.08);
+  --radius: 6px;
+  --radius-lg: 12px;
+  --max-w: 1200px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  background: var(--bg);
+}
+
+body {
+  font-family: 'Noto Sans SC', system-ui, sans-serif;
+  color: var(--text);
+  background: 
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(44,36,22,0.012) 3px,
+      rgba(44,36,22,0.012) 4px
+    ),
+    radial-gradient(ellipse at 20% 0%, rgba(196,69,54,0.03) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 100%, rgba(91,123,74,0.03) 0%, transparent 60%),
+    var(--bg);
+  line-height: 1.8;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Hero ─── */
+.hero {
+  position: relative;
+  padding: 100px 40px 80px;
+  text-align: center;
+  overflow: hidden;
+  background: 
+    radial-gradient(ellipse 600px 400px at 50% -20%, rgba(196,69,54,0.06) 0%, transparent 70%),
+    var(--bg);
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image: 
+    radial-gradient(circle at 15% 85%, rgba(91,123,74,0.04) 0%, transparent 30%),
+    radial-gradient(circle at 85% 15%, rgba(74,107,123,0.04) 0%, transparent 30%);
+  pointer-events: none;
+}
+
+.hero-enso {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 40px;
+  border-radius: 50%;
+  border: 2.5px solid var(--accent);
+  opacity: 0.35;
+  animation: enso-breathe 6s ease-in-out infinite;
+  position: relative;
+}
+
+.hero-enso::after {
+  content: '';
+  position: absolute;
+  top: 10px; left: 10px; right: 10px; bottom: 10px;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  opacity: 0.5;
+  animation: enso-breathe 6s ease-in-out 1.5s infinite;
+}
+
+@keyframes enso-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.35; }
+  50% { transform: scale(1.06); opacity: 0.5; }
+}
+
+.hero h1 {
+  font-family: 'Cormorant Garamond', 'Noto Serif SC', serif;
+  font-size: clamp(3rem, 6vw, 5rem);
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin-bottom: 16px;
+  animation: fadeUp 0.8s ease-out;
+}
+
+.hero .subtitle {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1.15rem;
+  color: var(--text-secondary);
+  font-weight: 400;
+  max-width: 640px;
+  margin: 0 auto 32px;
+  animation: fadeUp 0.8s ease-out 0.15s both;
+}
+
+.hero .divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  animation: fadeUp 0.8s ease-out 0.3s both;
+}
+
+.hero .divider .line {
+  width: 60px;
+  height: 1px;
+  background: var(--border);
+}
+
+.hero .divider .diamond {
+  width: 6px; height: 6px;
+  background: var(--accent);
+  transform: rotate(45deg);
+  opacity: 0.5;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Layout ─── */
+.container {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 0 40px 80px;
+}
+
+/* ─── Section ─── */
+.section {
+  margin-bottom: 64px;
+  animation: fadeUp 0.7s ease-out both;
+}
+
+.section:nth-child(2) { animation-delay: 0.1s; }
+.section:nth-child(3) { animation-delay: 0.2s; }
+.section:nth-child(4) { animation-delay: 0.3s; }
+.section:nth-child(5) { animation-delay: 0.4s; }
+.section:nth-child(6) { animation-delay: 0.5s; }
+.section:nth-child(7) { animation-delay: 0.6s; }
+.section:nth-child(8) { animation-delay: 0.7s; }
+.section:nth-child(9) { animation-delay: 0.8s; }
+.section:nth-child(10) { animation-delay: 0.9s; }
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.section-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2.5rem;
+  font-weight: 500;
+  color: var(--accent);
+  opacity: 0.5;
+  line-height: 1;
+  min-width: 40px;
+}
+
+.section-title {
+  font-family: 'Cormorant Garamond', 'Noto Serif SC', serif;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+/* ─── Bilingual Row ─── */
+.bilingual-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.bilingual-col {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 24px 28px;
+  border: 1px solid var(--border-light);
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.bilingual-col:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-1px);
+}
+
+.col-tag {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 3px;
+  margin-bottom: 12px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.col-tag.zh {
+  background: rgba(91,123,74,0.12);
+  color: var(--accent-green);
+}
+
+.col-text {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.85;
+}
+
+/* ─── Code Block ─── */
+.code-block {
+  background: var(--bg-code);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  overflow: hidden;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.code-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background: rgba(44,36,22,0.04);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.code-lang {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.code-lang-badge {
+  font-size: 0.6rem;
+  padding: 2px 8px;
+  border-radius: 3px;
+  background: rgba(196,69,54,0.08);
+  color: var(--accent);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.code-content {
+  padding: 20px 24px;
+  overflow-x: auto;
+}
+
+.code-content pre {
+  font-family: 'JetBrains Mono', 'Noto Sans SC', monospace;
+  font-size: 0.82rem;
+  line-height: 1.65;
+  color: var(--text);
+  white-space: pre;
+  tab-size: 4;
+}
+
+.code-content .kw { color: var(--accent); }
+.code-content .str { color: var(--accent-green); }
+.code-content .cmt { color: var(--text-muted); font-style: italic; }
+.code-content .ann { color: var(--accent-blue); }
+.code-content .fn { color: #7b5b4a; }
+
+/* ─── Note Box ─── */
+.note-box {
+  background: linear-gradient(135deg, rgba(74,107,123,0.06), rgba(91,123,74,0.04));
+  border-left: 3px solid var(--accent-blue);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.75;
+}
+
+.note-box strong {
+  color: var(--accent-blue);
+  font-weight: 600;
+}
+
+/* ─── Provider Grid ─── */
+.provider-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.provider-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 20px 22px;
+  transition: all 0.3s ease;
+}
+
+.provider-card:hover {
+  box-shadow: var(--shadow-lg);
+  border-color: var(--border);
+}
+
+.provider-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 10px;
+  letter-spacing: 0.03em;
+}
+
+.provider-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.73rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+/* ─── Feature Cards ─── */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.feature-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.feature-icon {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+  opacity: 0.7;
+}
+
+.feature-name {
+  font-family: 'Noto Serif SC', serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.feature-desc {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+/* ─── Method List ─── */
+.method-list {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+
+.method-item {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--text);
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(217,206,188,0.3);
+}
+
+.method-item:last-child {
+  border-bottom: none;
+}
+
+.method-item .grp {
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  font-weight: 600;
+  display: block;
+  margin-top: 8px;
+  margin-bottom: 2px;
+  letter-spacing: 0.05em;
+}
+
+.method-item .grp:first-child {
+  margin-top: 0;
+}
+
+/* ─── Scenario Cards ─── */
+.scenario-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.scenario-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 20px 22px;
+}
+
+.scenario-card .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.scenario-card .sc-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.scenario-card .sc-body {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+}
+
+/* ─── Footer ─── */
+.footer {
+  text-align: center;
+  padding: 40px;
+  border-top: 1px solid var(--border-light);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  letter-spacing: 0.03em;
+}
+
+.footer .enso-small {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+  opacity: 0.4;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 768px) {
+  .container { padding: 0 20px 60px; }
+  .hero { padding: 60px 20px 50px; }
+  .bilingual-row { grid-template-columns: 1fr; }
+  .scenario-grid { grid-template-columns: 1fr; }
+  .provider-grid { grid-template-columns: 1fr; }
+  .feature-grid { grid-template-columns: 1fr; }
+  .hero h1 { font-size: 2.4rem; }
+  .section-title { font-size: 1.4rem; }
+}
+
+@media (max-width: 480px) {
+  .hero { padding: 40px 16px 36px; }
+  .hero h1 { font-size: 1.9rem; }
+  .container { padding: 0 12px 40px; }
+  .bilingual-col { padding: 16px 18px; }
+  .code-content { padding: 14px 16px; }
+  .code-content pre { font-size: 0.7rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HERO ═══════════ -->
+<header class="hero">
+  <div class="hero-enso"></div>
+  <h1>AI Services</h1>
+  <p class="subtitle">
+    以声明式接口隐藏 LLM 交互的复杂性，如同 Spring Data JPA 之于数据库 —— 你只需定义接口，LangChain4j 负责实现。
+  </p>
+  <div class="divider">
+    <span class="line"></span>
+    <span class="diamond"></span>
+    <span class="line"></span>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- ═══════════ 1. Overview ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">01</span>
+    <h2 class="section-title">概述 / Overview</h2>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        So far, we have been covering low-level components like <code>ChatModel</code>, <code>ChatMessage</code>, <code>ChatMemory</code>, etc. Working at this level is very flexible and gives you total freedom, but it also forces you to write a lot of boilerplate code. Since LLM-powered applications usually require multiple components working together and often involve multiple interactions, orchestrating them all becomes cumbersome.
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        到目前为止，我们一直在讨论 <code>ChatModel</code>、<code>ChatMessage</code>、<code>ChatMemory</code> 等底层组件。在这个层面工作非常灵活，给予你完全的自由，但也迫使你编写大量样板代码。由于 LLM 驱动的应用程序通常需要多个组件协同工作，并涉及多次交互，编排它们会变得非常繁琐。
+      </p>
+    </div>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        We want you to focus on business logic, not on low-level implementation details. Thus, there are currently two high-level concepts: <strong>AI Services</strong> and <strong>Chains</strong> (legacy). AI Services are tailored for Java, hiding the complexities of interacting with LLMs and other components behind a simple API — very similar to Spring Data JPA or Retrofit.
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        我们希望您专注于业务逻辑，而非底层实现细节。因此，目前有两个高级概念：<strong>AI Services</strong> 和 <strong>Chains</strong>（遗留）。AI Services 专为 Java 量身定制，将 LLM 和其他组件的交互复杂性隐藏在简洁的 API 背后 —— 与 Spring Data JPA 或 Retrofit 非常相似。
+      </p>
+    </div>
+  </div>
+
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="feature-icon">📝</div>
+      <div class="feature-name">格式化输入 / Formatting Inputs</div>
+      <div class="feature-desc">自动将方法参数转换为 LLM 所需的输入格式</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔍</div>
+      <div class="feature-name">解析输出 / Parsing Outputs</div>
+      <div class="feature-desc">自动将 LLM 输出解析为所需类型（String、POJO、enum 等）</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🧠</div>
+      <div class="feature-name">聊天记忆 / Chat Memory</div>
+      <div class="feature-desc">内置多用户对话记忆管理，支持按 memoryId 隔离</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔧</div>
+      <div class="feature-name">工具调用 / Tools</div>
+      <div class="feature-desc">声明式工具注册，LLM 自主决定何时调用外部函数</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📚</div>
+      <div class="feature-name">RAG 检索增强 / RAG</div>
+      <div class="feature-desc">集成 ContentRetriever 和 RetrievalAugmentor，实现检索增强生成</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🛡️</div>
+      <div class="feature-name">自动审核 / Auto-Moderation</div>
+      <div class="feature-desc">自动内容审核，检测到不当内容时抛出 ModerationException</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 2. Simplest AI Service ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">02</span>
+    <h2 class="section-title">最简单的 AI Service / Simplest AI Service</h2>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        Define an interface with a single method, then create low-level components. Use <code>AiServices.create()</code> to get a proxy instance. In Quarkus and Spring Boot, autoconfiguration handles bean creation — you can simply inject/autowire the Assistant.
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        定义一个带单个方法的接口，然后创建底层组件。使用 <code>AiServices.create()</code> 获取代理实例。在 Quarkus 和 Spring Boot 中，自动配置会处理 Bean 的创建 —— 你只需注入/自动装配即可。
+      </p>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-block-header">
+      <span class="code-lang">Java</span>
+      <span class="code-lang-badge">Simplest Example</span>
+    </div>
+    <div class="code-content">
+<pre><span class="kw">interface</span> <span class="fn">Assistant</span> {
+    String <span class="fn">chat</span>(String userMessage);
+}
+
+<span class="cmt">// 创建底层 ChatModel</span>
+ChatModel model = OpenAiChatModel.<span class="fn">builder</span>()
+    .<span class="fn">apiKey</span>(System.<span class="fn">getenv</span>(<span class="str">"OPENAI_API_KEY"</span>))
+    .<span class="fn">modelName</span>(GPT_4_O_MINI)
+    .<span class="fn">build</span>();
+
+<span class="cmt">// 创建 AI Service 代理</span>
+Assistant assistant = AiServices.<span class="fn">create</span>(Assistant.<span class="kw">class</span>, model);
+
+String answer = assistant.<span class="fn">chat</span>(<span class="str">"Hello"</span>);
+System.out.<span class="fn">println</span>(answer); <span class="cmt">// Hello, how can I help you?</span></pre>
+    </div>
+  </div>
+
+  <div class="note-box">
+    <strong>工作原理：</strong>AiServices 创建代理对象，自动将 String 输入转换为 <code>UserMessage</code>，调用 ChatModel 后将 <code>AiMessage</code> 转换回 String 返回。目前使用反射实现，也在考虑其他替代方案。
+  </div>
+</section>
+
+<!-- ═══════════ 3. Annotations ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">03</span>
+    <h2 class="section-title">注解驱动 / Annotation-Driven</h2>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        <strong>@SystemMessage</strong> — defines a system prompt template. Can load from resources: <code>@SystemMessage(fromResource = "my-prompt-template.txt")</code>.<br><br>
+        <strong>@UserMessage</strong> — defines a user prompt template with <code>{{it}}</code> or named variables via <code>@V("name")</code>. Can also load from resources.
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        <strong>@SystemMessage</strong> — 定义系统提示模板。可从资源加载：<code>@SystemMessage(fromResource = "my-prompt-template.txt")</code>。<br><br>
+        <strong>@UserMessage</strong> — 定义用户提示模板，使用 <code>{{it}}</code> 或通过 <code>@V("name")</code> 命名变量。也可从资源加载。
+      </p>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-block-header">
+      <span class="code-lang">Java</span>
+      <span class="code-lang-badge">@SystemMessage</span>
+    </div>
+    <div class="code-content">
+<pre><span class="kw">interface</span> <span class="fn">Friend</span> {
+
+    <span class="ann">@SystemMessage</span>(<span class="str">"You are a good friend of mine. Answer using slang."</span>)
+    String <span class="fn">chat</span>(String userMessage);
+}
+
+Friend friend = AiServices.<span class="fn">create</span>(Friend.<span class="kw">class</span>, model);
+String answer = friend.<span class="fn">chat</span>(<span class="str">"Hello"</span>); <span class="cmt">// Hey! What's up?</span></pre>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-block-header">
+      <span class="code-lang">Java</span>
+      <span class="code-lang-badge">@UserMessage + @V</span>
+    </div>
+    <div class="code-content">
+<pre><span class="kw">interface</span> <span class="fn">Friend</span> {
+
+    <span class="ann">@UserMessage</span>(<span class="str">"You are a good friend of mine. Answer using slang. {{message}}"</span>)
+    String <span class="fn">chat</span>(<span class="ann">@V</span>(<span class="str">"message"</span>) String userMessage);
+}
+
+<span class="cmt">// 在 Quarkus / Spring Boot 中 @V 非必需（-parameters 已启用）</span></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 4. System Message Provider & Transformer ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">04</span>
+    <h2 class="section-title">系统消息提供者与转换器 / System Message Provider &amp; Transformer</h2>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        <strong>SystemMessageProvider</strong> — dynamically defines system messages based on a chat memory ID (user or conversation).<br><br>
+        <strong>SystemMessageTransformer</strong> — dynamically modifies the system message on every invocation, after resolution but before the <code>chatRequestTransformer</code> runs. Useful for appending/prepending content.
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        <strong>SystemMessageProvider</strong> — 基于 chat memory ID 动态定义系统消息。<br><br>
+        <strong>SystemMessageTransformer</strong> — 在每次调用时动态修改系统消息，在解析之后、chatRequestTransformer 运行之前执行。适用于追加或前置内容。
+      </p>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-block-header">
+      <span class="code-lang">Java</span>
+      <span class="code-lang-badge">Provider + Transformer</span>
+    </div>
+    <div class="code-content">
+<pre>Friend friend = AiServices.<span class="fn">builder</span>(Friend.<span class="kw">class</span>)
+    .<span class="fn">chatModel</span>(model)
+    .<span class="fn">systemMessageProvider</span>(chatMemoryId ->
+        <span class="str">"You are a good friend of mine. Answer using slang."</span>)
+    .<span class="fn">systemMessageTransformer</span>((systemMessage, context) ->
+        systemMessage + <span class="str">" Tenant: "</span> +
+        context.<span class="fn">invocationParameters</span>().<span class="fn">get</span>(<span class="str">"tenant"</span>) + <span class="str">"."</span>)
+    .<span class="fn">build</span>();</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 5. ChatRequestParameters ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">05</span>
+    <h2 class="section-title">按调用配置参数 / ChatRequestParameters</h2>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        Configure parameters (temperature, toolsChoice, max tokens, etc.) on a per-call basis. Some requests may need more creativity (higher temperature), others more determinism. The method accepts a <code>ChatRequestParameters</code> argument that is merged during invocation.
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        按每次调用配置参数（temperature、toolsChoice、max tokens 等）。某些请求可能需要更多创造性（高 temperature），另一些需要更高的确定性。方法接受 <code>ChatRequestParameters</code> 参数，在调用时合并。
+      </p>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-block-header">
+      <span class="code-lang">Java</span>
+      <span class="code-lang-badge">Per-Call Parameters</span>
+    </div>
+    <div class="code-content">
+<pre><span class="kw">interface</span> <span class="fn">AssistantWithChatParams</span> {
+    String <span class="fn">chat</span>(<span class="ann">@UserMessage</span> String userMessage,
+                   ChatRequestParameters params);
+}
+
+ChatRequestParameters customParams = ChatRequestParameters.<span class="fn">builder</span>()
+    .<span class="fn">temperature</span>(<span class="str">0.85</span>)
+    .<span class="fn">build</span>();
+
+String answer = assistant.<span class="fn">chat</span>(<span class="str">"Hi there!"</span>, customParams);</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 6. Method Signatures ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">06</span>
+    <h2 class="section-title">有效方法签名示例 / Valid Method Signatures</h2>
+  </div>
+
+  <div class="method-list">
+    <span class="grp">UserMessage only</span>
+    <div class="method-item">String chat(String userMessage);</div>
+    <div class="method-item">String chat(@UserMessage String userMessage);</div>
+    <div class="method-item">String chat(@UserMessage String userMessage, @V("country") String country);</div>
+    <div class="method-item">String chat(@UserMessage String userMessage, @UserMessage Content content);</div>
+    <div class="method-item">String chat(@UserMessage String userMessage, @UserMessage List&lt;Content&gt; contents);</div>
+    <div class="method-item">@UserMessage("What is the capital of {{it}}?") String chat(String country);</div>
+    <span class="grp">SystemMessage + UserMessage</span>
+    <div class="method-item">@SystemMessage("Given a name of a country, answer with its capital") String chat(String userMessage);</div>
+    <div class="method-item">@SystemMessage("Given a name of a country, {{answerInstructions}}") @UserMessage("{{country}}") String chat(@V("answerInstructions") String ins, @V("country") String country);</div>
+    <span class="grp">Multimodality</span>
+    <div class="method-item">String chat(@UserMessage String userMessage, @UserMessage ImageContent image);</div>
+    <div class="method-item">String chat(@UserMessage String userMessage, @UserMessage List&lt;ImageContent&gt; images);</div>
+    <div class="method-item">String chat(@UserMessage AudioContent audio, @UserMessage ImageContent image);</div>
+  </div>
+
+  <div class="note-box">
+    <strong>Return Types：</strong>方法可返回 <code>String</code>、任何结构化输出类型，或包装在 <code>Result&lt;T&gt;</code> 中以获取额外元数据（TokenUsage、Sources、ToolExecutions、FinishReason 等）。
+  </div>
+</section>
+
+<!-- ═══════════ 7. Structured Outputs ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">07</span>
+    <h2 class="section-title">结构化输出 / Structured Outputs</h2>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        Change the return type from <code>String</code> to any other type to receive structured output. Supports <strong>boolean</strong>, <strong>enum</strong>, and <strong>custom POJOs</strong>. Use <code>@Description</code> on fields to help the LLM understand the schema better.
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        将返回类型从 <code>String</code> 改为其他类型即可接收结构化输出。支持 <strong>boolean</strong>、<strong>enum</strong> 和<strong>自定义 POJO</strong>。在字段上使用 <code>@Description</code> 帮助 LLM 更好地理解 schema。
+      </p>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-block-header">
+      <span class="code-lang">Java</span>
+      <span class="code-lang-badge">Boolean · Enum · POJO</span>
+    </div>
+    <div class="code-content">
+<pre><span class="cmt">// boolean 返回</span>
+<span class="kw">interface</span> <span class="fn">SentimentAnalyzer</span> {
+    <span class="ann">@UserMessage</span>(<span class="str">"Does {{it}} has a positive sentiment?"</span>)
+    <span class="kw">boolean</span> <span class="fn">isPositive</span>(String text);
+}
+
+<span class="cmt">// enum 返回</span>
+<span class="kw">enum</span> <span class="fn">Priority</span> { CRITICAL, HIGH, LOW }
+
+<span class="kw">interface</span> <span class="fn">PriorityAnalyzer</span> {
+    <span class="ann">@UserMessage</span>(<span class="str">"Analyze the priority of: {{it}}"</span>)
+    Priority <span class="fn">analyzePriority</span>(String issueDescription);
+}
+
+<span class="cmt">// POJO 返回</span>
+<span class="kw">class</span> <span class="fn">Person</span> {
+    <span class="ann">@Description</span>(<span class="str">"first name of a person"</span>)
+    String firstName;
+    String lastName;
+    LocalDate birthDate;
+    Address address;
+}
+
+<span class="kw">interface</span> <span class="fn">PersonExtractor</span> {
+    <span class="ann">@UserMessage</span>(<span class="str">"Extract person info from {{it}}"</span>)
+    Person <span class="fn">extractPersonFrom</span>(String text);
+}</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 8. JSON Mode ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">08</span>
+    <h2 class="section-title">JSON 模式 / JSON Mode</h2>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        When extracting custom POJOs, enable "JSON mode" to force the LLM to respond with valid JSON. JSON mode is for structured data extraction; tools/function calling is for when the LLM needs to perform actions. Each provider has its own configuration API.
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        提取自定义 POJO 时，建议启用"JSON 模式"强制 LLM 返回有效 JSON。JSON 模式用于结构化数据提取；工具/函数调用用于 LLM 需要执行操作时。每个提供商有其独特的配置方式。
+      </p>
+    </div>
+  </div>
+
+  <div class="provider-grid">
+    <div class="provider-card">
+      <div class="provider-name">OpenAI (新模型: gpt-4o-mini)</div>
+      <div class="provider-code">.supportedCapabilities(RESPONSE_FORMAT_JSON_SCHEMA)
+.strictJsonSchema(true)</div>
+    </div>
+    <div class="provider-card">
+      <div class="provider-name">OpenAI (旧模型: gpt-3.5-turbo)</div>
+      <div class="provider-code">.responseFormat("json_object")</div>
+    </div>
+    <div class="provider-card">
+      <div class="provider-name">Azure OpenAI</div>
+      <div class="provider-code">.responseFormat(
+  new ChatCompletionsJsonResponseFormat())</div>
+    </div>
+    <div class="provider-card">
+      <div class="provider-name">Vertex AI Gemini</div>
+      <div class="provider-code">.responseMimeType("application/json")
+// 或显式 schema:
+.responseSchema(
+  SchemaHelper.fromClass(Person.class))</div>
+    </div>
+    <div class="provider-card">
+      <div class="provider-name">Google AI Gemini</div>
+      <div class="provider-code">.responseFormat(ResponseFormat.JSON)
+// 或显式 schema:
+.responseFormat(ResponseFormat.builder()
+  .type(JSON)
+  .jsonSchema(JsonSchemas
+    .jsonSchemaFrom(Person.class).get())
+  .build())</div>
+    </div>
+    <div class="provider-card">
+      <div class="provider-name">Mistral AI</div>
+      <div class="provider-code">.supportedCapabilities(RESPONSE_FORMAT_JSON_SCHEMA)
+.strictJsonSchema(true)</div>
+    </div>
+    <div class="provider-card">
+      <div class="provider-name">Ollama</div>
+      <div class="provider-code">.responseFormat(JSON)</div>
+    </div>
+  </div>
+
+  <div class="note-box">
+    <strong>其他提供商：</strong>如果底层模型不支持 JSON 模式，可使用 prompt engineering 并降低 temperature 来提高确定性。
+  </div>
+</section>
+
+<!-- ═══════════ 9. Streaming ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">09</span>
+    <h2 class="section-title">流式响应 / Streaming</h2>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        Use <code>TokenStream</code> return type to stream response token-by-token. Rich callback API: <code>onPartialResponse</code>, <code>onPartialThinking</code>, <code>onPartialToolCall</code>, <code>beforeToolExecution</code>, <code>onToolExecuted</code>, <code>onCompleteResponse</code>, <code>onError</code>. Also supports <code>Flux&lt;String&gt;</code> via the <code>langchain4j-reactor</code> module.
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        使用 <code>TokenStream</code> 返回类型实现逐 token 流式响应。丰富的回调 API：<code>onPartialResponse</code>、<code>onPartialThinking</code>、<code>onPartialToolCall</code>、<code>beforeToolExecution</code>、<code>onToolExecuted</code>、<code>onCompleteResponse</code>、<code>onError</code>。也支持通过 <code>langchain4j-reactor</code> 模块使用 <code>Flux&lt;String&gt;</code>。
+      </p>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-block-header">
+      <span class="code-lang">Java</span>
+      <span class="code-lang-badge">TokenStream</span>
+    </div>
+    <div class="code-content">
+<pre><span class="kw">interface</span> <span class="fn">Assistant</span> {
+    TokenStream <span class="fn">chat</span>(String message);
+}
+
+StreamingChatModel model = OpenAiStreamingChatModel.<span class="fn">builder</span>()
+    .<span class="fn">apiKey</span>(System.<span class="fn">getenv</span>(<span class="str">"OPENAI_API_KEY"</span>))
+    .<span class="fn">modelName</span>(GPT_4_O_MINI)
+    .<span class="fn">build</span>();
+
+Assistant assistant = AiServices.<span class="fn">create</span>(Assistant.<span class="kw">class</span>, model);
+
+tokenStream
+    .<span class="fn">onPartialResponse</span>(partial -> System.out.<span class="fn">println</span>(partial))
+    .<span class="fn">onPartialThinking</span>(thinking -> System.out.<span class="fn">println</span>(thinking))
+    .<span class="fn">onPartialToolCall</span>(toolCall -> System.out.<span class="fn">println</span>(toolCall))
+    .<span class="fn">beforeToolExecution</span>(before -> System.out.<span class="fn">println</span>(before))
+    .<span class="fn">onToolExecuted</span>(execution -> System.out.<span class="fn">println</span>(execution))
+    .<span class="fn">onCompleteResponse</span>(futureResponse::complete)
+    .<span class="fn">onError</span>(futureResponse::completeExceptionally)
+    .<span class="fn">start</span>();</pre>
+    </div>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        <strong>Streaming Cancellation:</strong> Use <code>onPartialResponseWithContext</code> or <code>onPartialThinkingWithContext</code> to access <code>StreamingHandle.cancel()</code>. Once cancelled, no further callbacks are received.
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        <strong>流式取消：</strong>使用 <code>onPartialResponseWithContext</code> 或 <code>onPartialThinkingWithContext</code> 访问 <code>StreamingHandle.cancel()</code>。一旦取消，将不再收到任何回调。
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 10. Chat Memory ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">10</span>
+    <h2 class="section-title">聊天记忆 / Chat Memory</h2>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        AI Service can use chat memory to "remember" previous interactions. For multi-user scenarios, use <code>ChatMemoryProvider</code> with <code>@MemoryId</code> annotation. Extend <code>ChatMemoryAccess</code> to access and evict per-conversation memories. <strong>Important:</strong> Do not call AI Service concurrently for the same <code>@MemoryId</code>.
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        AI Service 可使用聊天记忆"记住"之前的交互。对于多用户场景，使用 <code>ChatMemoryProvider</code> 和 <code>@MemoryId</code> 注解。扩展 <code>ChatMemoryAccess</code> 可访问和清除各对话的记忆。<strong>重要：</strong>不要对相同的 <code>@MemoryId</code> 并发调用 AI Service。
+      </p>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-block-header">
+      <span class="code-lang">Java</span>
+      <span class="code-lang-badge">ChatMemoryProvider + @MemoryId</span>
+    </div>
+    <div class="code-content">
+<pre><span class="kw">interface</span> <span class="fn">Assistant</span> <span class="kw">extends</span> <span class="fn">ChatMemoryAccess</span> {
+    String <span class="fn">chat</span>(<span class="ann">@MemoryId</span> <span class="kw">int</span> memoryId,
+               <span class="ann">@UserMessage</span> String message);
+}
+
+Assistant assistant = AiServices.<span class="fn">builder</span>(Assistant.<span class="kw">class</span>)
+    .<span class="fn">chatModel</span>(model)
+    .<span class="fn">chatMemoryProvider</span>(memoryId ->
+        MessageWindowChatMemory.<span class="fn">withMaxMessages</span>(<span class="str">10</span>))
+    .<span class="fn">build</span>();
+
+String answerToKlaus = assistant.<span class="fn">chat</span>(<span class="str">1</span>, <span class="str">"Hello, my name is Klaus"</span>);
+String answerToFrancine = assistant.<span class="fn">chat</span>(<span class="str">2</span>, <span class="str">"Hello, my name is Francine"</span>);
+
+<span class="cmt">// 访问和清除记忆</span>
+List&lt;ChatMessage&gt; msgs = assistant.<span class="fn">getChatMemory</span>(<span class="str">1</span>).<span class="fn">messages</span>();
+<span class="kw">boolean</span> evicted = assistant.<span class="fn">evictChatMemory</span>(<span class="str">2</span>);</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 11. Tools ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">11</span>
+    <h2 class="section-title">工具调用 / Tools (Function Calling)</h2>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        Configure AI Service with tools that the LLM can use. Annotate methods with <code>@Tool</code>. LangChain4j automatically executes requested tools and feeds results back to the LLM for the final answer.
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        为 AI Service 配置 LLM 可用的工具。使用 <code>@Tool</code> 注解方法。LangChain4j 自动执行请求的工具并将结果反馈给 LLM 以生成最终答案。
+      </p>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-block-header">
+      <span class="code-lang">Java</span>
+      <span class="code-lang-badge">@Tool</span>
+    </div>
+    <div class="code-content">
+<pre><span class="kw">class</span> <span class="fn">Tools</span> {
+
+    <span class="ann">@Tool</span>
+    <span class="kw">int</span> <span class="fn">add</span>(<span class="kw">int</span> a, <span class="kw">int</span> b) {
+        <span class="kw">return</span> a + b;
+    }
+
+    <span class="ann">@Tool</span>
+    <span class="kw">int</span> <span class="fn">multiply</span>(<span class="kw">int</span> a, <span class="kw">int</span> b) {
+        <span class="kw">return</span> a * b;
+    }
+}
+
+Assistant assistant = AiServices.<span class="fn">builder</span>(Assistant.<span class="kw">class</span>)
+    .<span class="fn">chatModel</span>(model)
+    .<span class="fn">tools</span>(<span class="kw">new</span> <span class="fn">Tools</span>())
+    .<span class="fn">build</span>();
+
+String answer = assistant.<span class="fn">chat</span>(<span class="str">"What is 1+2 and 3*4?"</span>);
+<span class="cmt">// LLM 请求执行 add(1,2) 和 multiply(3,4)，LangChain4j 自动执行</span></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 12. RAG ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">12</span>
+    <h2 class="section-title">RAG 检索增强 / Retrieval-Augmented Generation</h2>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        <strong>Naive RAG:</strong> Configure with <code>ContentRetriever</code>.<br>
+        <strong>Advanced RAG:</strong> Use <code>RetrievalAugmentor</code> for query transformation, re-ranking, content aggregation, etc.<br>
+        <strong>RAG as a Tool:</strong> Encapsulate <code>ContentRetriever</code> in a <code>@Tool</code> — the LLM decides when to trigger retrieval, avoiding unnecessary searches for simple queries.
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        <strong>朴素 RAG：</strong>配置 <code>ContentRetriever</code>。<br>
+        <strong>高级 RAG：</strong>使用 <code>RetrievalAugmentor</code> 实现查询转换、重排序、内容聚合等。<br>
+        <strong>RAG 作为工具：</strong>将 <code>ContentRetriever</code> 封装在 <code>@Tool</code> 中 —— LLM 自主决定何时触发检索，避免对简单查询进行不必要的搜索。
+      </p>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-block-header">
+      <span class="code-lang">Java</span>
+      <span class="code-lang-badge">Naive RAG + Advanced RAG</span>
+    </div>
+    <div class="code-content">
+<pre><span class="cmt">// 朴素 RAG</span>
+ContentRetriever contentRetriever = <span class="kw">new</span> <span class="fn">EmbeddingStoreContentRetriever</span>(
+    embeddingStore, embeddingModel);
+
+Assistant assistant = AiServices.<span class="fn">builder</span>(Assistant.<span class="kw">class</span>)
+    .<span class="fn">chatModel</span>(model)
+    .<span class="fn">contentRetriever</span>(contentRetriever)
+    .<span class="fn">build</span>();
+
+<span class="cmt">// 高级 RAG</span>
+RetrievalAugmentor retrievalAugmentor = DefaultRetrievalAugmentor.<span class="fn">builder</span>()
+    .<span class="fn">queryTransformer</span>(...)
+    .<span class="fn">queryRouter</span>(...)
+    .<span class="fn">contentAggregator</span>(...)
+    .<span class="fn">contentInjector</span>(...)
+    .<span class="fn">executor</span>(...)
+    .<span class="fn">build</span>();</pre>
+    </div>
+  </div>
+
+  <div class="scenario-grid">
+    <div class="scenario-card">
+      <div class="label">场景 A — 一般对话</div>
+      <div class="sc-title">用户输入：Hello, how are you today?</div>
+      <div class="sc-body">LLM 直接从内部知识回答，<strong>不调用</strong>检索工具。</div>
+    </div>
+    <div class="scenario-card">
+      <div class="label">场景 B — 技术问题</div>
+      <div class="sc-title">用户输入：How do I configure a ContentRetriever?</div>
+      <div class="sc-body">LLM 识别技术意图，<strong>调用 search()</strong>，基于检索到的文档生成回答。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 13. Chaining & Auto-Moderation ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">13</span>
+    <h2 class="section-title">链式调用与自动审核 / Chaining &amp; Auto-Moderation</h2>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        <strong>Auto-Moderation:</strong> Configure a <code>ModerationModel</code> — when inappropriate content is detected, a <code>ModerationException</code> is thrown.<br><br>
+        <strong>Chaining:</strong> Break complex logic into smaller, specialized AI Services. Use deterministic and LLM-powered control flow (if/else with boolean, switch with enum, loops with numeric returns). Each AI Service can be mocked, integration-tested, and optimized independently.
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        <strong>自动审核：</strong>配置 <code>ModerationModel</code> —— 检测到不当内容时抛出 <code>ModerationException</code>。<br><br>
+        <strong>链式调用：</strong>将复杂逻辑拆分为更小、更专业的 AI Service。使用确定性和 LLM 驱动的控制流（boolean 实现 if/else、enum 实现 switch、数值类型实现循环）。每个 AI Service 可独立模拟、集成测试和优化。
+      </p>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-block-header">
+      <span class="code-lang">Java</span>
+      <span class="code-lang-badge">Chaining Example</span>
+    </div>
+    <div class="code-content">
+<pre><span class="kw">interface</span> <span class="fn">GreetingExpert</span> {
+    <span class="ann">@UserMessage</span>(<span class="str">"Is the following text a greeting? Text: {{it}}"</span>)
+    <span class="kw">boolean</span> <span class="fn">isGreeting</span>(String text);
+}
+
+<span class="kw">interface</span> <span class="fn">ChatBot</span> {
+    <span class="ann">@SystemMessage</span>(<span class="str">"You are a polite chatbot of Miles of Smiles."</span>)
+    String <span class="fn">reply</span>(String userMessage);
+}
+
+<span class="kw">class</span> <span class="fn">MilesOfSmiles</span> {
+    <span class="kw">public</span> String <span class="fn">handle</span>(String userMessage) {
+        <span class="kw">if</span> (greetingExpert.<span class="fn">isGreeting</span>(userMessage)) {
+            <span class="kw">return</span> <span class="str">"Greetings from Miles of Smiles!"</span>;
+        } <span class="kw">else</span> {
+            <span class="kw">return</span> chatBot.<span class="fn">reply</span>(userMessage);
+        }
+    }
+}
+
+<span class="cmt">// 简单任务用便宜的 Llama2，复杂任务用 GPT-4 + RAG</span>
+GreetingExpert greetingExpert = AiServices.<span class="fn">create</span>(GreetingExpert.<span class="kw">class</span>, llama2);
+ChatBot chatBot = AiServices.<span class="fn">builder</span>(ChatBot.<span class="kw">class</span>)
+    .<span class="fn">chatModel</span>(gpt4)
+    .<span class="fn">contentRetriever</span>(milesOfSmilesContentRetriever)
+    .<span class="fn">build</span>();</pre>
+    </div>
+  </div>
+
+  <div class="note-box">
+    <strong>设计原则：</strong>更小、更专注的组件更易于开发、测试、维护和理解。不要让 LLM 一次性访问所有工具 —— 根据场景按需提供，既节省 token 成本，又降低幻觉风险。
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<footer class="footer">
+  <div class="enso-small"></div>
+  <p>LangChain4j AI Services · 中英双语参考文档</p>
+  <p style="margin-top: 4px; opacity: 0.6;">基于 LangChain4j 官方文档</p>
+</footer>
+
+</body>
+</html>
