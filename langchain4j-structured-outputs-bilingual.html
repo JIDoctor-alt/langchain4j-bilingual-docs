@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LangChain4j Structured Outputs — 中英双语</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf7f2;
+  --bg-card: #f5f0e8;
+  --bg-code: #f0ebe0;
+  --text: #1a1814;
+  --text-secondary: #5c5548;
+  --text-muted: #8a8275;
+  --accent: #c9a84c;
+  --accent-dark: #8b6914;
+  --accent-coral: #d4756b;
+  --accent-sage: #7a9a7e;
+  --border: #d9d0c0;
+  --border-light: #e8e0d2;
+  --shadow: 0 1px 3px rgba(26,24,20,0.06);
+  --shadow-lg: 0 4px 24px rgba(26,24,20,0.08);
+  --radius: 2px;
+  --radius-lg: 4px;
+  --max-w: 1280px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; background: var(--bg); }
+
+body {
+  font-family: 'Noto Sans SC', system-ui, sans-serif;
+  color: var(--text);
+  background:
+    /* art deco fan pattern */
+    repeating-conic-gradient(
+      from 0deg at 0% 0%,
+      rgba(201,168,76,0.015) 0deg 5deg,
+      transparent 5deg 10deg
+    ),
+    repeating-conic-gradient(
+      from 5deg at 100% 100%,
+      rgba(201,168,76,0.015) 0deg 5deg,
+      transparent 5deg 10deg
+    ),
+    var(--bg);
+  line-height: 1.8;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Hero ─── */
+.hero {
+  position: relative;
+  padding: 90px 40px 70px;
+  text-align: center;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(201,168,76,0.04) 0%, transparent 40%),
+    var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Art deco geometric overlay */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    /* top fan */
+    radial-gradient(circle at 50% -40%, rgba(201,168,76,0.06) 0%, transparent 60%),
+    /* bottom fans */
+    radial-gradient(circle at 20% 120%, rgba(122,154,126,0.04) 0%, transparent 50%),
+    radial-gradient(circle at 80% 120%, rgba(212,117,107,0.04) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Art deco diamonds */
+.deco-diamonds {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 36px;
+  animation: fadeUp 0.8s ease-out;
+}
+
+.deco-diamond {
+  width: 12px; height: 12px;
+  background: var(--accent);
+  transform: rotate(45deg);
+  opacity: 0.3;
+  animation: diamond-pulse 3s ease-in-out infinite;
+}
+
+.deco-diamond:nth-child(2) { animation-delay: 0.3s; opacity: 0.5; }
+.deco-diamond:nth-child(3) { animation-delay: 0.6s; opacity: 0.7; width: 16px; height: 16px; }
+.deco-diamond:nth-child(4) { animation-delay: 0.9s; opacity: 0.5; }
+.deco-diamond:nth-child(5) { animation-delay: 1.2s; opacity: 0.3; }
+
+@keyframes diamond-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+}
+
+.hero h1 {
+  font-family: 'Playfair Display', 'Noto Serif SC', serif;
+  font-size: clamp(2.8rem, 5.5vw, 4.5rem);
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin-bottom: 12px;
+  animation: fadeUp 0.8s ease-out 0.1s both;
+}
+
+.hero h1 .accent {
+  color: var(--accent-dark);
+  position: relative;
+}
+
+.hero .subtitle {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  font-weight: 400;
+  max-width: 700px;
+  margin: 0 auto 28px;
+  animation: fadeUp 0.8s ease-out 0.2s both;
+}
+
+.hero .rule {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  animation: fadeUp 0.8s ease-out 0.3s both;
+}
+
+.hero .rule-line {
+  width: 48px; height: 1px;
+  background: var(--accent);
+  opacity: 0.4;
+}
+
+.hero .rule-diamond {
+  width: 7px; height: 7px;
+  background: var(--accent);
+  transform: rotate(45deg);
+  opacity: 0.5;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Layout ─── */
+.container {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 0 40px 80px;
+  position: relative;
+}
+
+/* Decorative sidebar line */
+.container::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    var(--accent) 3%,
+    transparent 5%,
+    transparent 95%,
+    var(--accent) 97%,
+    transparent 100%
+  );
+  opacity: 0.2;
+}
+
+/* ─── Section ─── */
+.section {
+  margin-bottom: 60px;
+  animation: fadeUp 0.7s ease-out both;
+}
+
+.section:nth-child(2) { animation-delay: 0.08s; }
+.section:nth-child(3) { animation-delay: 0.16s; }
+.section:nth-child(4) { animation-delay: 0.24s; }
+.section:nth-child(5) { animation-delay: 0.32s; }
+.section:nth-child(6) { animation-delay: 0.40s; }
+.section:nth-child(7) { animation-delay: 0.48s; }
+.section:nth-child(8) { animation-delay: 0.56s; }
+.section:nth-child(9) { animation-delay: 0.64s; }
+.section:nth-child(10) { animation-delay: 0.72s; }
+.section:nth-child(11) { animation-delay: 0.80s; }
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--border);
+  position: relative;
+}
+
+.section-header::after {
+  content: '';
+  position: absolute;
+  bottom: -2px; left: 0;
+  width: 40px;
+  height: 2px;
+  background: var(--accent);
+}
+
+.section-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--accent);
+  opacity: 0.5;
+  min-width: 36px;
+}
+
+.section-title {
+  font-family: 'Playfair Display', 'Noto Serif SC', serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+/* ─── Bilingual Row ─── */
+.bilingual-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.bilingual-col {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 22px 26px;
+  border: 1px solid var(--border);
+  position: relative;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.bilingual-col:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-lg);
+}
+
+.col-tag {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  padding: 3px 10px;
+  margin-bottom: 12px;
+  background: rgba(201,168,76,0.1);
+  color: var(--accent-dark);
+  border: 1px solid rgba(201,168,76,0.2);
+}
+
+.col-tag.zh {
+  background: rgba(122,154,126,0.1);
+  color: var(--accent-sage);
+  border-color: rgba(122,154,126,0.2);
+}
+
+.col-text {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  line-height: 1.85;
+}
+
+.col-text strong { color: var(--text); }
+.col-text code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82em;
+  color: var(--accent-dark);
+  background: rgba(201,168,76,0.08);
+  padding: 1px 5px;
+  border-radius: 2px;
+}
+
+/* ─── Code Block ─── */
+.code-block {
+  background: var(--bg-code);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.code-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 18px;
+  background: rgba(201,168,76,0.04);
+  border-bottom: 1px solid var(--border);
+}
+
+.code-lang {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+}
+
+.code-lang-badge {
+  font-size: 0.58rem;
+  padding: 2px 8px;
+  background: rgba(201,168,76,0.08);
+  color: var(--accent-dark);
+  font-family: 'JetBrains Mono', monospace;
+  border: 1px solid rgba(201,168,76,0.15);
+}
+
+.code-content {
+  padding: 18px 22px;
+  overflow-x: auto;
+}
+
+.code-content pre {
+  font-family: 'JetBrains Mono', 'Noto Sans SC', monospace;
+  font-size: 0.77rem;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre;
+  tab-size: 4;
+}
+
+.code-content .kw { color: #8b6914; }
+.code-content .str { color: #7a9a7e; }
+.code-content .cmt { color: #8a8275; font-style: italic; }
+.code-content .ann { color: #d4756b; }
+.code-content .fn { color: #5c8a9e; }
+.code-content .num { color: #c9a84c; }
+
+/* ─── Note Box ─── */
+.note-box {
+  background: linear-gradient(135deg, rgba(201,168,76,0.05), rgba(201,168,76,0.02));
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.75;
+}
+
+.note-box.sage {
+  background: linear-gradient(135deg, rgba(122,154,126,0.05), rgba(122,154,126,0.02));
+  border-left-color: var(--accent-sage);
+}
+
+.note-box strong { color: var(--accent-dark); font-weight: 600; }
+.note-box.sage strong { color: var(--accent-sage); }
+
+/* ─── Table ─── */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  font-size: 0.82rem;
+}
+
+.data-table thead th {
+  text-align: left;
+  padding: 10px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.63rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--accent-dark);
+  background: rgba(201,168,76,0.04);
+  border-bottom: 2px solid var(--border);
+}
+
+.data-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.data-table td:first-child {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--text);
+}
+
+.data-table tr:hover td {
+  background: rgba(201,168,76,0.02);
+}
+
+/* ─── Schema Grid ─── */
+.schema-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.schema-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  transition: all 0.3s ease;
+}
+
+.schema-card:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-lg);
+}
+
+.schema-card .s-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: var(--accent-dark);
+  margin-bottom: 6px;
+}
+
+.schema-card .s-desc {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ─── Three Column Compare ─── */
+.three-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.three-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 22px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.three-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.three-card .t-rank {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--accent);
+  opacity: 0.4;
+  margin-bottom: 4px;
+}
+
+.three-card .t-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.three-card .t-desc {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ─── Provider Grid ─── */
+.provider-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.provider-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 18px;
+  transition: all 0.3s ease;
+}
+
+.provider-card:hover {
+  border-color: var(--accent);
+}
+
+.provider-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--accent-dark);
+  margin-bottom: 6px;
+  letter-spacing: 0.03em;
+}
+
+.provider-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+/* ─── Subsection ─── */
+.subsection {
+  margin-bottom: 28px;
+}
+
+.subsection-title {
+  font-family: 'Playfair Display', 'Noto Serif SC', serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--accent-sage);
+  margin-bottom: 14px;
+  padding-left: 14px;
+  border-left: 2px solid var(--accent-sage);
+}
+
+/* ─── Step List ─── */
+.step-list {
+  counter-reset: step;
+  margin-bottom: 20px;
+}
+
+.step-item {
+  display: flex;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border-light);
+  counter-increment: step;
+}
+
+.step-item:last-child { border-bottom: none; }
+
+.step-num-box {
+  width: 32px; height: 32px;
+  border: 1px solid var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Playfair Display', serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent);
+  flex-shrink: 0;
+  transform: rotate(45deg);
+}
+
+.step-num-box span {
+  transform: rotate(-45deg);
+}
+
+.step-body {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.75;
+}
+
+.step-body strong { color: var(--text); }
+
+/* ─── Footer ─── */
+.footer {
+  text-align: center;
+  padding: 40px;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+}
+
+.footer .diamond-small {
+  display: inline-block;
+  width: 10px; height: 10px;
+  background: var(--accent);
+  transform: rotate(45deg);
+  margin-bottom: 12px;
+  opacity: 0.25;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 768px) {
+  .container { padding: 0 20px 60px; }
+  .hero { padding: 60px 20px 50px; }
+  .bilingual-row { grid-template-columns: 1fr; }
+  .three-col { grid-template-columns: 1fr; }
+  .schema-grid { grid-template-columns: 1fr; }
+  .provider-grid { grid-template-columns: 1fr; }
+  .hero h1 { font-size: 2.2rem; }
+  .section-title { font-size: 1.25rem; }
+  .container::before { display: none; }
+}
+
+@media (max-width: 480px) {
+  .hero { padding: 40px 16px 36px; }
+  .hero h1 { font-size: 1.7rem; }
+  .container { padding: 0 12px 40px; }
+  .bilingual-col { padding: 16px 18px; }
+  .code-content { padding: 14px 16px; }
+  .code-content pre { font-size: 0.68rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HERO ═══════════ -->
+<header class="hero">
+  <div class="deco-diamonds">
+    <div class="deco-diamond"></div>
+    <div class="deco-diamond"></div>
+    <div class="deco-diamond"></div>
+    <div class="deco-diamond"></div>
+    <div class="deco-diamond"></div>
+  </div>
+  <h1>Structured <span class="accent">Outputs</span></h1>
+  <p class="subtitle">
+    让 LLM 输出可预测的 JSON 结构 —— 从非结构化文本中提取 POJO、枚举、多态类型，三种方式层层递进：JSON Schema 最可靠，Prompting + JSON Mode 次之，纯 Prompting 兜底。
+  </p>
+  <div class="rule">
+    <span class="rule-line"></span>
+    <span class="rule-diamond"></span>
+    <span class="rule-line"></span>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- ═══════════ 1. Overview ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">01</span>
+    <h2 class="section-title">概述 / Overview</h2>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        "Structured Outputs" refers to the general ability of the LLM to generate outputs in a structured format, typically JSON. These outputs can be easily mapped to Java objects. <strong>Note:</strong> this is distinct from OpenAI's "Structured Outputs" feature which applies to both response format <em>and</em> tools.
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        "结构化输出"指 LLM 以结构化格式（通常是 JSON）生成输出的能力。这些输出可以轻松映射到 Java 对象。<strong>注意：</strong>这与 OpenAI 的"Structured Outputs"功能不同，后者同时适用于响应格式<em>和</em>工具。
+      </p>
+    </div>
+  </div>
+
+  <div class="note-box">
+    <strong>示例目标：</strong>从非结构化文本中提取 <code>Person</code> 对象（name、age、height、married）。"John is 42 years old, 1.75m tall, unmarried." → <code>Person[name=John, age=42, height=1.75, married=false]</code>
+  </div>
+
+  <div class="section-header">
+    <span class="section-num"></span>
+    <h2 class="section-title">三种方式 / Three Approaches</h2>
+  </div>
+
+  <div class="three-col">
+    <div class="three-card">
+      <div class="t-rank">1</div>
+      <div class="t-name">JSON Schema</div>
+      <div class="t-desc">最可靠方式。在请求中指定 JSON Schema，LLM 返回严格符合 schema 的 JSON。</div>
+    </div>
+    <div class="three-card">
+      <div class="t-rank">2</div>
+      <div class="t-name">Prompting + JSON Mode</div>
+      <div class="t-desc">在提示词中描述格式，并启用 JSON Mode 确保输出为合法 JSON。</div>
+    </div>
+    <div class="three-card">
+      <div class="t-rank">3</div>
+      <div class="t-name">Pure Prompting</div>
+      <div class="t-desc">仅通过提示词引导格式，AI Service 自动追加格式指令并解析。可靠性最低。</div>
+    </div>
+  </div>
+
+  <div class="provider-grid">
+    <div class="provider-card">
+      <div class="provider-name">Amazon Bedrock</div>
+      <div class="provider-code">✅ JSON Schema supported</div>
+    </div>
+    <div class="provider-card">
+      <div class="provider-name">Azure OpenAI</div>
+      <div class="provider-code">✅ JSON Schema supported</div>
+    </div>
+    <div class="provider-card">
+      <div class="provider-name">Google AI Gemini</div>
+      <div class="provider-code">✅ JSON Schema supported</div>
+    </div>
+    <div class="provider-card">
+      <div class="provider-name">Mistral AI</div>
+      <div class="provider-code">✅ JSON Schema supported</div>
+    </div>
+    <div class="provider-card">
+      <div class="provider-name">Ollama</div>
+      <div class="provider-code">✅ JSON Schema supported</div>
+    </div>
+    <div class="provider-card">
+      <div class="provider-name">OpenAI</div>
+      <div class="provider-code">✅ JSON Schema supported</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 2. JSON Schema with ChatModel ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">02</span>
+    <h2 class="section-title">JSON Schema 与 ChatModel / JSON Schema with ChatModel</h2>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        In the low-level ChatModel API, use <code>ResponseFormat</code> and <code>JsonSchema</code> when creating a <code>ChatRequest</code>. The JSON schema is specified in a dedicated API attribute — no free-form instructions needed in the prompt. Use <code>JsonObjectSchema.builder()</code> to define the root element with properties, types, and required fields.
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        在低级 ChatModel API 中，创建 <code>ChatRequest</code> 时使用 <code>ResponseFormat</code> 和 <code>JsonSchema</code>。JSON Schema 在 API 专有属性中指定，无需在提示词中添加自由格式指令。使用 <code>JsonObjectSchema.builder()</code> 定义根元素及其属性、类型和必填字段。
+      </p>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-block-header">
+      <span class="code-lang">Java</span>
+      <span class="code-lang-badge">ChatModel + JSON Schema</span>
+    </div>
+    <div class="code-content">
+<pre><span class="cmt">// 1. 定义 JSON Schema</span>
+ResponseFormat responseFormat = ResponseFormat.<span class="fn">builder</span>()
+    .<span class="fn">type</span>(JSON)  <span class="cmt">// TEXT (default) 或 JSON</span>
+    .<span class="fn">jsonSchema</span>(JsonSchema.<span class="fn">builder</span>()
+        .<span class="fn">name</span>(<span class="str">"Person"</span>)  <span class="cmt">// OpenAI 要求指定 schema 名称</span>
+        .<span class="fn">rootElement</span>(JsonObjectSchema.<span class="fn">builder</span>()
+            .<span class="fn">addStringProperty</span>(<span class="str">"name"</span>)
+            .<span class="fn">addIntegerProperty</span>(<span class="str">"age"</span>)
+            .<span class="fn">addNumberProperty</span>(<span class="str">"height"</span>)
+            .<span class="fn">addBooleanProperty</span>(<span class="str">"married"</span>)
+            .<span class="fn">required</span>(<span class="str">"name"</span>, <span class="str">"age"</span>, <span class="str">"height"</span>, <span class="str">"married"</span>)
+            .<span class="fn">build</span>())
+        .<span class="fn">build</span>())
+    .<span class="fn">build</span>();
+
+<span class="cmt">// 2. 发送请求</span>
+ChatRequest chatRequest = ChatRequest.<span class="fn">builder</span>()
+    .<span class="fn">responseFormat</span>(responseFormat)
+    .<span class="fn">messages</span>(UserMessage.<span class="fn">from</span>(text))
+    .<span class="fn">build</span>();
+
+ChatResponse chatResponse = chatModel.<span class="fn">chat</span>(chatRequest);
+String output = chatResponse.<span class="fn">aiMessage</span>().<span class="fn">text</span>();
+<span class="cmt">// {"name":"John","age":42,"height":1.75,"married":false}</span>
+
+Person person = <span class="kw">new</span> <span class="fn">ObjectMapper</span>().<span class="fn">readValue</span>(output, Person.<span class="kw">class</span>);</pre>
+    </div>
+  </div>
+
+  <div class="note-box">
+    <strong>必填字段：</strong>必须显式指定 <code>required()</code>，否则所有字段被视为可选。根元素通常为 <code>JsonObjectSchema</code>，但 Bedrock/Azure/Mistral/Ollama/OpenAI 也支持 <code>JsonRawSchema</code> 作为根元素。
+  </div>
+</section>
+
+<!-- ═══════════ 3. JsonSchemaElement Subtypes ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">03</span>
+    <h2 class="section-title">JsonSchemaElement 子类型 / JsonSchemaElement Subtypes</h2>
+  </div>
+
+  <div class="schema-grid">
+    <div class="schema-card">
+      <div class="s-name">JsonObjectSchema</div>
+      <div class="s-desc">对象类型，包含嵌套属性。通常作为 JsonSchema 的根元素。支持 <code>properties()</code>、<code>addProperty()</code>、<code>add{Type}Property()</code> 三种添加方式。</div>
+    </div>
+    <div class="schema-card">
+      <div class="s-name">JsonStringSchema</div>
+      <div class="s-desc">String / char / Character 类型。可设置 <code>description</code> 帮助 LLM 理解。</div>
+    </div>
+    <div class="schema-card">
+      <div class="s-name">JsonIntegerSchema</div>
+      <div class="s-desc">int / Integer / long / Long / BigInteger 类型。</div>
+    </div>
+    <div class="schema-card">
+      <div class="s-name">JsonNumberSchema</div>
+      <div class="s-desc">float / Float / double / Double / BigDecimal 类型。</div>
+    </div>
+    <div class="schema-card">
+      <div class="s-name">JsonBooleanSchema</div>
+      <div class="s-desc">boolean / Boolean 类型。</div>
+    </div>
+    <div class="schema-card">
+      <div class="s-name">JsonEnumSchema</div>
+      <div class="s-desc">枚举类型。通过 <code>enumValues()</code> 指定可选值列表。</div>
+    </div>
+    <div class="schema-card">
+      <div class="s-name">JsonArraySchema</div>
+      <div class="s-desc">数组和集合（List、Set）。通过 <code>items()</code> 指定元素类型。</div>
+    </div>
+    <div class="schema-card">
+      <div class="s-name">JsonReferenceSchema</div>
+      <div class="s-desc">支持递归（如 Person 有 <code>Set&lt;Person&gt; children</code>）。仅 Azure OpenAI、Mistral、OpenAI 支持。</div>
+    </div>
+    <div class="schema-card">
+      <div class="s-name">JsonAnyOfSchema</div>
+      <div class="s-desc">支持多态（如 Shape 可以是 Circle 或 Rectangle）。仅 OpenAI、Azure OpenAI、Gemini 支持。</div>
+    </div>
+    <div class="schema-card">
+      <div class="s-name">JsonNullSchema</div>
+      <div class="s-desc">支持 nullable 类型。</div>
+    </div>
+    <div class="schema-card">
+      <div class="s-name">JsonRawSchema</div>
+      <div class="s-desc">使用自定义完整 JSON Schema 字符串。Bedrock、Azure、Mistral、Ollama、OpenAI、Gemini 支持。</div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-title">JsonAnyOfSchema — 多态示例</div>
+    <div class="code-block">
+      <div class="code-block-header">
+        <span class="code-lang">Java</span>
+        <span class="code-lang-badge">Polymorphism</span>
+      </div>
+      <div class="code-content">
+<pre><span class="cmt">// Circle 和 Rectangle 统一为 Shape</span>
+JsonSchemaElement circleSchema = JsonObjectSchema.<span class="fn">builder</span>()
+    .<span class="fn">addNumberProperty</span>(<span class="str">"radius"</span>).<span class="fn">build</span>();
+
+JsonSchemaElement rectSchema = JsonObjectSchema.<span class="fn">builder</span>()
+    .<span class="fn">addNumberProperty</span>(<span class="str">"width"</span>).<span class="fn">addNumberProperty</span>(<span class="str">"height"</span>).<span class="fn">build</span>();
+
+JsonSchemaElement shapeSchema = JsonAnyOfSchema.<span class="fn">builder</span>()
+    .<span class="fn">anyOf</span>(circleSchema, rectSchema).<span class="fn">build</span>();
+
+<span class="cmt">// LLM 输出: {"shapes":[{"radius":5},{"width":10,"height":20}]}</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-title">JsonReferenceSchema — 递归示例</div>
+    <div class="code-block">
+      <div class="code-block-header">
+        <span class="code-lang">Java</span>
+        <span class="code-lang-badge">Recursion</span>
+      </div>
+      <div class="code-content">
+<pre><span class="cmt">// Person 递归包含 children: Set&lt;Person&gt;</span>
+String reference = <span class="str">"person"</span>;
+
+JsonObjectSchema jsonObjectSchema = JsonObjectSchema.<span class="fn">builder</span>()
+    .<span class="fn">addStringProperty</span>(<span class="str">"name"</span>)
+    .<span class="fn">addProperty</span>(<span class="str">"children"</span>, JsonArraySchema.<span class="fn">builder</span>()
+        .<span class="fn">items</span>(JsonReferenceSchema.<span class="fn">builder</span>().<span class="fn">reference</span>(reference).<span class="fn">build</span>())
+        .<span class="fn">build</span>())
+    .<span class="fn">required</span>(<span class="str">"name"</span>, <span class="str">"children"</span>)
+    .<span class="fn">definitions</span>(Map.<span class="fn">of</span>(reference, <span class="cmt">/* 递归定义 */</span> ...))
+    .<span class="fn">build</span>();</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="note-box sage">
+    <strong>描述（Description）：</strong>所有 JsonSchemaElement 子类型（除 JsonReferenceSchema）都支持 <code>description</code> 属性。当 LLM 输出不理想时，可添加描述提供更多指导和正确示例，如 <code>"The name of the person, for example: John Doe"</code>。
+  </div>
+</section>
+
+<!-- ═══════════ 4. JSON Schema with AI Services ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">04</span>
+    <h2 class="section-title">JSON Schema 与 AI Services / JSON Schema with AI Services</h2>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        AI Services makes structured output extraction effortless. Simply define an interface method returning a POJO, and enable JSON Schema on the ChatModel. LangChain4j auto-generates the <code>ResponseFormat</code> with <code>JsonSchema</code> from the return type. The schema name defaults to the return type's simple class name (e.g., <code>"Person"</code>).
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        AI Services 让结构化输出提取变得极其简单。只需定义返回 POJO 的接口方法，并在 ChatModel 上启用 JSON Schema。LangChain4j 自动根据返回类型生成 <code>ResponseFormat</code> 和 <code>JsonSchema</code>。Schema 名称默认为返回类型的简单类名（如 <code>"Person"</code>）。
+      </p>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-block-header">
+      <span class="code-lang">Java</span>
+      <span class="code-lang-badge">AI Service + JSON Schema</span>
+    </div>
+    <div class="code-content">
+<pre><span class="kw">interface</span> <span class="fn">PersonExtractor</span> {
+    Person <span class="fn">extractPersonFrom</span>(String text);
+}
+
+<span class="cmt">// 启用 JSON Schema 功能（以 OpenAI 为例）</span>
+ChatModel chatModel = OpenAiChatModel.<span class="fn">builder</span>()
+    .<span class="fn">apiKey</span>(System.<span class="fn">getenv</span>(<span class="str">"OPENAI_API_KEY"</span>))
+    .<span class="fn">modelName</span>(<span class="str">"gpt-4o-mini"</span>)
+    .<span class="fn">supportedCapabilities</span>(RESPONSE_FORMAT_JSON_SCHEMA)  <span class="cmt">// 启用</span>
+    .<span class="fn">strictJsonSchema</span>(<span class="kw">true</span>)
+    .<span class="fn">build</span>();
+
+PersonExtractor extractor = AiServices.<span class="fn">create</span>(PersonExtractor.<span class="kw">class</span>, chatModel);
+Person person = extractor.<span class="fn">extractPersonFrom</span>(text);
+<span class="cmt">// Person[name=John, age=42, height=1.75, married=false]</span></pre>
+    </div>
+  </div>
+
+  <div class="note-box">
+    <strong>三大条件：</strong>同时满足以下条件时自动启用 JSON Schema —— (1) AI Service 方法返回 POJO，(2) ChatModel 支持 JSON Schema，(3) JSON Schema 功能已显式启用。在 Quarkus/Spring Boot 中，ChatModel 和 AI Service 的 Bean 会自动创建。
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-title">各提供商启用方式</div>
+    <div class="provider-grid">
+      <div class="provider-card">
+        <div class="provider-name">OpenAI</div>
+        <div class="provider-code">.supportedCapabilities(RESPONSE_FORMAT_JSON_SCHEMA)
+.strictJsonSchema(true)</div>
+      </div>
+      <div class="provider-card">
+        <div class="provider-name">Azure OpenAI</div>
+        <div class="provider-code">.supportedCapabilities(RESPONSE_FORMAT_JSON_SCHEMA)
+.strictJsonSchema(true)</div>
+      </div>
+      <div class="provider-card">
+        <div class="provider-name">Google AI Gemini</div>
+        <div class="provider-code">.supportedCapabilities(RESPONSE_FORMAT_JSON_SCHEMA)</div>
+      </div>
+      <div class="provider-card">
+        <div class="provider-name">Ollama</div>
+        <div class="provider-code">.supportedCapabilities(RESPONSE_FORMAT_JSON_SCHEMA)</div>
+      </div>
+      <div class="provider-card">
+        <div class="provider-name">Mistral AI</div>
+        <div class="provider-code">.supportedCapabilities(RESPONSE_FORMAT_JSON_SCHEMA)
+.strictJsonSchema(true)</div>
+      </div>
+      <div class="provider-card">
+        <div class="provider-name">watsonx.ai</div>
+        <div class="provider-code">.supportedCapabilities(RESPONSE_FORMAT_JSON_SCHEMA)</div>
+      </div>
+      <div class="provider-card">
+        <div class="provider-name">Amazon Bedrock</div>
+        <div class="provider-code">.supportedCapabilities(RESPONSE_FORMAT_JSON_SCHEMA)</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 5. Required / Optional & Description ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">05</span>
+    <h2 class="section-title">必填/可选字段与描述 / Required, Optional &amp; Description</h2>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        AI Services: by default, <strong>all fields are optional</strong> (LLMs tend to hallucinate and populate missing data). Use <code>@JsonProperty(required = true)</code> to make fields required. For tools, all fields are required by default. Use <code>@Description</code> on classes and fields to guide the LLM.
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        AI Services：默认<strong>所有字段为可选</strong>（LLM 倾向于在信息不足时编造数据）。使用 <code>@JsonProperty(required = true)</code> 标记必填。工具中默认所有字段为必填。使用 <code>@Description</code> 在类和字段上指导 LLM。
+      </p>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-block-header">
+      <span class="code-lang">Java</span>
+      <span class="code-lang-badge">@Description + @JsonProperty</span>
+    </div>
+    <div class="code-content">
+<pre><span class="ann">@Description</span>(<span class="str">"a person"</span>)
+<span class="kw">record</span> <span class="fn">Person</span>(
+    <span class="ann">@Description</span>(<span class="str">"person's first and last name, for example: John Doe"</span>)
+    <span class="ann">@JsonProperty</span>(required = <span class="kw">true</span>)
+    String name,
+
+    <span class="ann">@Description</span>(<span class="str">"person's age, for example: 42"</span>)
+    <span class="kw">int</span> age,
+
+    <span class="ann">@Description</span>(<span class="str">"person's height in meters, for example: 1.78"</span>)
+    <span class="kw">double</span> height,
+
+    <span class="ann">@Description</span>(<span class="str">"is person married or not, for example: false"</span>)
+    <span class="kw">boolean</span> married
+) {}</pre>
+    </div>
+  </div>
+
+  <div class="note-box sage">
+    <strong>注意：</strong>枚举值上的 <code>@Description</code> 无效，不会被包含在生成的 JSON Schema 中。可选的基本类型字段（int、boolean 等）在 LLM 未提供值时会被初始化为默认值（0、false 等）。
+  </div>
+</section>
+
+<!-- ═══════════ 6. Polymorphic Types ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">06</span>
+    <h2 class="section-title">多态类型 / Polymorphic Types</h2>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        AI Service methods can return <strong>polymorphic types</strong> — a base type whose concrete subtype is decided by the LLM at runtime. Two flavors: <strong>sealed interfaces/classes</strong> (no annotations needed) and <strong>Jackson @JsonSubTypes</strong>. A discriminator property (default <code>"type"</code>) tells the parser which subtype to instantiate.
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        AI Service 方法可返回<strong>多态类型</strong> —— 基类型，具体子类型由 LLM 在运行时决定。两种方式：<strong>sealed 接口/类</strong>（无需注解）和 <strong>Jackson @JsonSubTypes</strong>。鉴别器属性（默认 <code>"type"</code>）告诉解析器应实例化哪个子类型。
+      </p>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-block-header">
+      <span class="code-lang">Java</span>
+      <span class="code-lang-badge">Sealed Interface</span>
+    </div>
+    <div class="code-content">
+<pre><span class="cmt">// Sealed — 无需额外注解，自动发现子类型</span>
+<span class="kw">sealed interface</span> <span class="fn">Animal</span> <span class="kw">permits</span> Dog, Cat {}
+<span class="kw">record</span> <span class="fn">Dog</span>(String name, String breed) <span class="kw">implements</span> Animal {}
+<span class="kw">record</span> <span class="fn">Cat</span>(String name, <span class="kw">boolean</span> indoor) <span class="kw">implements</span> Animal {}
+
+<span class="kw">interface</span> <span class="fn">AnimalExtractor</span> {
+    Animal <span class="fn">extractAnimalFrom</span>(String text);
+}
+
+<span class="cmt">// "Rex is a Labrador" → {"value":{"type":"Dog","name":"Rex","breed":"Labrador"}}</span>
+<span class="cmt">// 注意：多态选择被包装在 value 属性下（因为多数提供商不支持根级 anyOf）</span></pre>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-block-header">
+      <span class="code-lang">Java</span>
+      <span class="code-lang-badge">@JsonSubTypes</span>
+    </div>
+    <div class="code-content">
+<pre><span class="cmt">// Jackson 方式 — 自定义 wire name</span>
+<span class="ann">@JsonTypeInfo</span>(use = Id.NAME, property = <span class="str">"kind"</span>)
+<span class="ann">@JsonSubTypes</span>({
+    <span class="ann">@JsonSubTypes</span>.Type(value = Square.<span class="kw">class</span>, name = <span class="str">"square"</span>),
+    <span class="ann">@JsonSubTypes</span>.Type(value = Circle.<span class="kw">class</span>, name = <span class="str">"circle"</span>)
+})
+<span class="kw">interface</span> <span class="fn">Shape</span> {}
+<span class="kw">class</span> <span class="fn">Square</span> { <span class="kw">double</span> side; }
+<span class="kw">class</span> <span class="fn">Circle</span> { <span class="kw">double</span> radius; }
+
+<span class="cmt">// 鉴别器值解析顺序：@JsonSubTypes.Type.name → @JsonTypeName → Class.getSimpleName()</span></pre>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-title">defaultImpl — 幻觉容错</div>
+    <div class="code-block">
+      <div class="code-block-header">
+        <span class="code-lang">Java</span>
+        <span class="code-lang-badge">defaultImpl</span>
+      </div>
+      <div class="code-content">
+<pre><span class="ann">@JsonTypeInfo</span>(use = Id.NAME, defaultImpl = UnknownTool.<span class="kw">class</span>)
+<span class="ann">@JsonSubTypes</span>({
+    <span class="ann">@JsonSubTypes</span>.Type(value = Hammer.<span class="kw">class</span>, name = <span class="str">"hammer"</span>),
+    <span class="ann">@JsonSubTypes</span>.Type(value = Wrench.<span class="kw">class</span>, name = <span class="str">"wrench"</span>)
+})
+<span class="kw">interface</span> <span class="fn">Tool</span> {}
+
+<span class="cmt">// LLM 输出 "saw"（未知鉴别器）→ 返回 UnknownTool 实例，不会崩溃</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <table class="data-table">
+    <thead><tr><th>@JsonTypeInfo 属性</th><th>支持的值</th></tr></thead>
+    <tr><td>use</td><td>Id.NAME, Id.SIMPLE_NAME</td></tr>
+    <tr><td>include</td><td>As.PROPERTY (默认), As.EXISTING_PROPERTY</td></tr>
+    <tr><td>property</td><td>任意值；留空时默认 "@type"</td></tr>
+    <tr><td>defaultImpl</td><td>任意具体子类 —— 鉴别器缺失或未知时使用</td></tr>
+    <tr><td>visible</td><td>true 保留鉴别器字段在反序列化 Bean 上</td></tr>
+  </table>
+
+  <div class="note-box">
+    <strong>递归多态：</strong>支持 <code>sealed interface ExpressionNode { Literal, BinaryOp }</code>，其中 <code>BinaryOp</code> 包含 <code>ExpressionNode left, right</code>。需要模型支持 $ref/$defs（Azure OpenAI、Mistral、OpenAI）。
+  </div>
+</section>
+
+<!-- ═══════════ 7. Limitations ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">07</span>
+    <h2 class="section-title">限制与回退 / Limitations &amp; Fallback</h2>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        <strong>ChatModel limitations:</strong> JSON Schema doesn't work in streaming mode for OpenAI. <code>JsonReferenceSchema</code> and <code>JsonAnyOfSchema</code> are only supported by Azure OpenAI, Mistral, and OpenAI.<br><br>
+        <strong>AI Services limitations:</strong> No streaming mode. JSON Schema must be explicitly enabled. When the LLM doesn't support JSON Schema or it's not enabled, AI Services <strong>fall back to prompting</strong> — auto-generating format instructions appended to the UserMessage.
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        <strong>ChatModel 限制：</strong>OpenAI 的 JSON Schema 暂不支持流式模式。<code>JsonReferenceSchema</code> 和 <code>JsonAnyOfSchema</code> 仅 Azure OpenAI、Mistral、OpenAI 支持。<br><br>
+        <strong>AI Services 限制：</strong>不支持流式模式。JSON Schema 必须显式启用。当 LLM 不支持 JSON Schema 或未启用时，AI Services <strong>回退到 prompting</strong> —— 自动生成格式指令追加到 UserMessage 末尾。
+      </p>
+    </div>
+  </div>
+
+  <div class="note-box sage">
+    <strong>提示：</strong>纯 Prompting 方式相当不可靠。如果 LLM 和提供商支持 JSON Schema，强烈建议优先使用。
+  </div>
+</section>
+
+<!-- ═══════════ 8. Supported Types ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">08</span>
+    <h2 class="section-title">支持的类型一览 / Supported Types</h2>
+  </div>
+
+  <table class="data-table">
+    <thead><tr><th>Type</th><th>JSON Schema</th><th>Prompting</th></tr></thead>
+    <tr><td>POJO</td><td>✅</td><td>✅</td></tr>
+    <tr><td>List&lt;POJO&gt;, Set&lt;POJO&gt;</td><td>✅</td><td>❌</td></tr>
+    <tr><td>Enum</td><td>✅</td><td>✅</td></tr>
+    <tr><td>List&lt;Enum&gt;, Set&lt;Enum&gt;</td><td>✅</td><td>✅</td></tr>
+    <tr><td>List&lt;String&gt;, Set&lt;String&gt;</td><td>✅</td><td>✅</td></tr>
+    <tr><td>Polymorphic (sealed / @JsonSubTypes), incl. List/Set</td><td>✅</td><td>❌</td></tr>
+    <tr><td>boolean, Boolean</td><td>✅</td><td>✅</td></tr>
+    <tr><td>int, Integer / long, Long / float, Float / double, Double</td><td>✅</td><td>✅</td></tr>
+    <tr><td>byte, Byte / short, Short</td><td>❌</td><td>✅</td></tr>
+    <tr><td>BigInteger / BigDecimal</td><td>❌</td><td>✅</td></tr>
+    <tr><td>Date / LocalDate / LocalTime / LocalDateTime</td><td>❌</td><td>✅</td></tr>
+    <tr><td>Map&lt;?, ?&gt;</td><td>❌</td><td>✅</td></tr>
+  </table>
+
+  <div class="note-box">
+    <strong>POJO 可包含：</strong>标量/简单类型、枚举、嵌套 POJO、List&lt;T&gt;/Set&lt;T&gt;/T[]、多态类型（sealed 或 @JsonSubTypes）。递归当前仅 Azure OpenAI、Mistral、OpenAI 支持。多态类型需要 LLM 支持 JSON Schema 中的 anyOf。
+  </div>
+</section>
+
+<!-- ═══════════ 9. Complete Example ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">09</span>
+    <h2 class="section-title">完整示例 / Complete Example</h2>
+  </div>
+
+  <div class="code-block">
+    <div class="code-block-header">
+      <span class="code-lang">Java</span>
+      <span class="code-lang-badge">All Return Types</span>
+    </div>
+    <div class="code-content">
+<pre><span class="kw">record</span> <span class="fn">Person</span>(String firstName, String lastName) {}
+
+<span class="kw">enum</span> <span class="fn">Sentiment</span> { POSITIVE, NEGATIVE, NEUTRAL }
+
+<span class="kw">interface</span> <span class="fn">Assistant</span> {
+
+    <span class="cmt">// POJO</span>
+    Person <span class="fn">extractPersonFrom</span>(String text);
+
+    <span class="cmt">// 集合</span>
+    Set&lt;Person&gt; <span class="fn">extractPeopleFrom</span>(String text);
+
+    <span class="cmt">// 枚举</span>
+    Sentiment <span class="fn">extractSentimentFrom</span>(String text);
+
+    <span class="cmt">// 枚举列表</span>
+    List&lt;Sentiment&gt; <span class="fn">extractSentimentsFrom</span>(String text);
+
+    <span class="cmt">// 字符串列表</span>
+    List&lt;String&gt; <span class="fn">generateOutline</span>(String topic);
+
+    <span class="cmt">// 基本类型</span>
+    <span class="kw">boolean</span> <span class="fn">isSentimentPositive</span>(String text);
+
+    Integer <span class="fn">extractNumberOfPeopleMentionedIn</span>(String text);
+}</pre>
+    </div>
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<footer class="footer">
+  <div class="diamond-small"></div>
+  <p>LangChain4j Structured Outputs · 中英双语参考文档</p>
+  <p style="margin-top: 4px; opacity: 0.5;">基于 LangChain4j 官方文档</p>
+</footer>
+
+</body>
+</html>
