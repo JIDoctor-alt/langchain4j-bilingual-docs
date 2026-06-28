@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LangChain4j Tools (Function Calling) — 中英双语</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e1a;
+  --bg-card: #111827;
+  --bg-card-alt: #0f1525;
+  --bg-code: #0d1321;
+  --text: #e0e6f0;
+  --text-secondary: #8899b4;
+  --text-muted: #5a6d8a;
+  --accent: #00e5ff;
+  --accent-glow: rgba(0,229,255,0.15);
+  --accent-amber: #ffb300;
+  --accent-amber-glow: rgba(255,179,0,0.12);
+  --accent-copper: #c77d5a;
+  --border: #1e2d4a;
+  --border-light: #253555;
+  --shadow: 0 2px 8px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+  --radius: 4px;
+  --radius-lg: 8px;
+  --max-w: 1240px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; background: var(--bg); }
+
+body {
+  font-family: 'Noto Sans SC', system-ui, sans-serif;
+  color: var(--text);
+  background:
+    /* blueprint grid */
+    linear-gradient(rgba(0,229,255,0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,255,0.018) 1px, transparent 1px),
+    /* subtle radial glow */
+    radial-gradient(ellipse 800px 600px at 50% 0%, rgba(0,229,255,0.04) 0%, transparent 70%),
+    radial-gradient(ellipse 600px 400px at 80% 100%, rgba(255,179,0,0.03) 0%, transparent 60%),
+    var(--bg);
+  background-size: 40px 40px, 40px 40px, 100% 100%, 100% 100%;
+  line-height: 1.8;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Hero ─── */
+.hero {
+  position: relative;
+  padding: 90px 40px 70px;
+  text-align: center;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border);
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(0,229,255,0.06) 0%, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(255,179,0,0.05) 0%, transparent 40%);
+  pointer-events: none;
+}
+
+.hero-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+  background-size: 30px 30px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black 30%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero-gear {
+  position: relative;
+  width: 80px; height: 80px;
+  margin: 0 auto 32px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  opacity: 0.5;
+  animation: gear-spin 12s linear infinite;
+}
+
+.hero-gear::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 60%; height: 60%;
+  border: 2px solid var(--accent-amber);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: gear-spin 8s linear reverse infinite;
+}
+
+.hero-gear::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 20%; height: 20%;
+  background: var(--accent);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.6;
+}
+
+@keyframes gear-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.hero h1 {
+  font-family: 'DM Serif Display', 'Noto Serif SC', serif;
+  font-size: clamp(2.8rem, 5.5vw, 4.5rem);
+  font-weight: 400;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin-bottom: 12px;
+  animation: fadeUp 0.8s ease-out;
+}
+
+.hero h1 .accent { color: var(--accent); }
+
+.hero .subtitle {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  font-weight: 400;
+  max-width: 680px;
+  margin: 0 auto 28px;
+  animation: fadeUp 0.8s ease-out 0.15s both;
+}
+
+.hero .badge-row {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  animation: fadeUp 0.8s ease-out 0.3s both;
+}
+
+.hero .badge {
+  padding: 5px 16px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  letter-spacing: 0.04em;
+}
+
+.hero .badge.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Layout ─── */
+.container {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 0 40px 80px;
+}
+
+/* ─── Section ─── */
+.section {
+  margin-bottom: 72px;
+  animation: fadeUp 0.7s ease-out both;
+}
+
+.section:nth-child(2) { animation-delay: 0.08s; }
+.section:nth-child(3) { animation-delay: 0.16s; }
+.section:nth-child(4) { animation-delay: 0.24s; }
+.section:nth-child(5) { animation-delay: 0.32s; }
+.section:nth-child(6) { animation-delay: 0.40s; }
+.section:nth-child(7) { animation-delay: 0.48s; }
+.section:nth-child(8) { animation-delay: 0.56s; }
+.section:nth-child(9) { animation-delay: 0.64s; }
+.section:nth-child(10) { animation-delay: 0.72s; }
+.section:nth-child(11) { animation-delay: 0.80s; }
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+
+.section-header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px; left: 0;
+  width: 60px;
+  height: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.section-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent);
+  opacity: 0.7;
+  min-width: 32px;
+  letter-spacing: 0.06em;
+}
+
+.section-title {
+  font-family: 'DM Serif Display', 'Noto Serif SC', serif;
+  font-size: 1.6rem;
+  font-weight: 400;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+/* ─── Bilingual Row ─── */
+.bilingual-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.bilingual-col {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 22px 26px;
+  border: 1px solid var(--border);
+  position: relative;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.bilingual-col:hover {
+  border-color: var(--border-light);
+  box-shadow: var(--shadow-lg);
+}
+
+.col-tag {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 3px 10px;
+  border-radius: 3px;
+  margin-bottom: 12px;
+  background: rgba(0,229,255,0.08);
+  color: var(--accent);
+  border: 1px solid rgba(0,229,255,0.15);
+}
+
+.col-tag.zh {
+  background: rgba(255,179,0,0.08);
+  color: var(--accent-amber);
+  border-color: rgba(255,179,0,0.15);
+}
+
+.col-text {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  line-height: 1.85;
+}
+
+.col-text strong { color: var(--text); }
+.col-text code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82em;
+  color: var(--accent);
+  background: rgba(0,229,255,0.06);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+/* ─── Code Block ─── */
+.code-block {
+  background: var(--bg-code);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.code-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 18px;
+  background: rgba(0,229,255,0.03);
+  border-bottom: 1px solid var(--border);
+}
+
+.code-lang {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+}
+
+.code-lang-badge {
+  font-size: 0.58rem;
+  padding: 2px 8px;
+  border-radius: 3px;
+  background: rgba(0,229,255,0.06);
+  color: var(--accent);
+  font-family: 'JetBrains Mono', monospace;
+  border: 1px solid rgba(0,229,255,0.1);
+}
+
+.code-content {
+  padding: 18px 22px;
+  overflow-x: auto;
+}
+
+.code-content pre {
+  font-family: 'JetBrains Mono', 'Noto Sans SC', monospace;
+  font-size: 0.78rem;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre;
+  tab-size: 4;
+}
+
+.code-content .kw { color: #00e5ff; }
+.code-content .str { color: #ffb300; }
+.code-content .cmt { color: #5a6d8a; font-style: italic; }
+.code-content .ann { color: #c77d5a; }
+.code-content .fn { color: #7eb8da; }
+.code-content .num { color: #ffb300; }
+
+/* ─── Note Box ─── */
+.note-box {
+  background: linear-gradient(135deg, rgba(0,229,255,0.04), rgba(0,229,255,0.01));
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.75;
+}
+
+.note-box.warn {
+  background: linear-gradient(135deg, rgba(255,179,0,0.04), rgba(255,179,0,0.01));
+  border-left-color: var(--accent-amber);
+}
+
+.note-box strong { color: var(--accent); font-weight: 600; }
+.note-box.warn strong { color: var(--accent-amber); }
+
+/* ─── Comparison Grid ─── */
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.compare-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 22px;
+}
+
+.compare-card .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--accent-amber);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.compare-card .label::before {
+  content: '';
+  width: 8px; height: 8px;
+  border-radius: 2px;
+  background: var(--accent-amber);
+  transform: rotate(45deg);
+}
+
+.compare-card.success .label { color: #4ade80; }
+.compare-card.success .label::before { background: #4ade80; }
+
+.compare-card .c-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.compare-card .c-body {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+}
+
+/* ─── Table ─── */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  font-size: 0.85rem;
+}
+
+.data-table th {
+  text-align: left;
+  padding: 10px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  background: rgba(0,229,255,0.03);
+  border-bottom: 1px solid var(--border);
+}
+
+.data-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.73rem;
+  line-height: 1.5;
+}
+
+.data-table tr:hover td {
+  background: rgba(0,229,255,0.02);
+}
+
+/* ─── Feature Grid ─── */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.feature-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 16px var(--accent-glow);
+}
+
+.feature-card .f-icon {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--accent);
+  margin-bottom: 8px;
+  letter-spacing: 0.08em;
+}
+
+.feature-card .f-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.feature-card .f-desc {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ─── Flow Steps ─── */
+.flow-steps {
+  display: flex;
+  gap: 0;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.flow-step {
+  flex: 1;
+  min-width: 160px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 16px 18px;
+  text-align: center;
+  position: relative;
+  margin-right: -1px;
+}
+
+.flow-step:first-child { border-radius: var(--radius-lg) 0 0 var(--radius-lg); }
+.flow-step:last-child { border-radius: 0 var(--radius-lg) var(--radius-lg) 0; margin-right: 0; }
+
+.flow-step .step-num {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.5rem;
+  color: var(--accent);
+  opacity: 0.5;
+  margin-bottom: 4px;
+}
+
+.flow-step .step-title {
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.flow-step .step-desc {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* ─── Method List ─── */
+.method-list {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 18px;
+  margin-bottom: 20px;
+}
+
+.method-item {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--text);
+  padding: 3px 0;
+  border-bottom: 1px solid rgba(30,45,74,0.5);
+}
+
+.method-item:last-child { border-bottom: none; }
+
+.method-item .grp {
+  color: var(--text-muted);
+  font-size: 0.6rem;
+  font-weight: 600;
+  display: block;
+  margin-top: 8px;
+  margin-bottom: 2px;
+  letter-spacing: 0.06em;
+}
+
+.method-item .grp:first-child { margin-top: 0; }
+
+/* ─── Subsection ─── */
+.subsection {
+  margin-bottom: 28px;
+}
+
+.subsection-title {
+  font-family: 'DM Serif Display', 'Noto Serif SC', serif;
+  font-size: 1.15rem;
+  font-weight: 400;
+  color: var(--accent-amber);
+  margin-bottom: 14px;
+  padding-left: 14px;
+  border-left: 2px solid var(--accent-amber);
+}
+
+/* ─── Footer ─── */
+.footer {
+  text-align: center;
+  padding: 40px;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+}
+
+.footer .gear-small {
+  display: inline-block;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  margin-bottom: 10px;
+  opacity: 0.3;
+  animation: gear-spin 8s linear infinite;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 768px) {
+  .container { padding: 0 20px 60px; }
+  .hero { padding: 60px 20px 50px; }
+  .bilingual-row { grid-template-columns: 1fr; }
+  .compare-grid { grid-template-columns: 1fr; }
+  .feature-grid { grid-template-columns: 1fr; }
+  .flow-steps { flex-direction: column; }
+  .flow-step { margin-right: 0; margin-bottom: -1px; border-radius: 0; }
+  .flow-step:first-child { border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+  .flow-step:last-child { border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+  .hero h1 { font-size: 2.2rem; }
+  .section-title { font-size: 1.3rem; }
+  .data-table { font-size: 0.7rem; }
+  .data-table td, .data-table th { padding: 6px 8px; }
+}
+
+@media (max-width: 480px) {
+  .hero { padding: 40px 16px 36px; }
+  .hero h1 { font-size: 1.7rem; }
+  .container { padding: 0 12px 40px; }
+  .bilingual-col { padding: 16px 18px; }
+  .code-content { padding: 14px 16px; }
+  .code-content pre { font-size: 0.68rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HERO ═══════════ -->
+<header class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-gear"></div>
+  <h1>Tools <span class="accent">(Function Calling)</span></h1>
+  <p class="subtitle">
+    让 LLM 不止于生成文本 —— 当需要时，它可以调用你定义的工具：搜索网页、调用 API、执行代码，将 AI 从对话引擎升级为行动引擎。
+  </p>
+  <div class="badge-row">
+    <span class="badge active">@Tool</span>
+    <span class="badge">ToolSpecification</span>
+    <span class="badge">ToolExecutor</span>
+    <span class="badge">ToolProvider</span>
+    <span class="badge">ToolSearch</span>
+    <span class="badge">MCP</span>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- ═══════════ 1. Overview ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">01</span>
+    <h2 class="section-title">概述 / Overview</h2>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        Some LLMs, in addition to generating text, can also <strong>trigger actions</strong>. Known as "tools" or "function calling", this allows the LLM to call one or more available tools when necessary. A tool can be anything: a web search, an external API call, or executing specific code. LLMs cannot call tools themselves; they express the <strong>intent</strong> to call a tool, and we developers execute it and report back the results.
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        某些 LLM 除了生成文本外，还能<strong>触发操作</strong>。这被称为"工具"或"函数调用"，允许 LLM 在必要时调用一个或多个可用工具。工具可以是任何东西：网页搜索、外部 API 调用或执行特定代码。LLM 本身无法真正调用工具，而是表达<strong>调用意图</strong>，由开发者执行并将结果反馈给 LLM。
+      </p>
+    </div>
+  </div>
+
+  <div class="note-box">
+    <strong>关键提示：</strong>提供清晰明确的工具名称、功能描述以及每个参数的描述，能大幅提高 LLM 正确调用工具的概率。一个好的经验法则：如果人类能理解工具的用途和使用方式，LLM 大概率也能理解。
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-title">数学示例：有工具 vs 无工具</div>
+    <div class="compare-grid">
+      <div class="compare-card">
+        <div class="label">WITHOUT TOOLS · 无工具</div>
+        <div class="c-title">Request: "What is the square root of 475695037565?"</div>
+        <div class="c-body">Response: <em>"approximately 689710."</em> — 接近但不正确。</div>
+      </div>
+      <div class="compare-card success">
+        <div class="label">WITH TOOLS · 有工具</div>
+        <div class="c-title">Request → LLM 请求 squareRoot(475695037565)</div>
+        <div class="c-body">执行 <code>Math.sqrt()</code> → 回传结果 → Response: <em>"689706.486532."</em> — 精确！</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 2. Two Levels of Abstraction ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">02</span>
+    <h2 class="section-title">两层抽象 / Two Levels of Abstraction</h2>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        <strong>Low-level:</strong> Use <code>ChatModel</code> and <code>ToolSpecification</code> APIs directly. You manually create tool specs, handle execution, and manage the request/response cycle.<br><br>
+        <strong>High-level:</strong> Use <strong>AI Services</strong> with <code>@Tool</code>-annotated Java methods. AI Services automatically convert methods to <code>ToolSpecification</code>s, execute tools when LLM requests, and feed results back.
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        <strong>低级 API：</strong>直接使用 <code>ChatModel</code> 和 <code>ToolSpecification</code>。手动创建工具规格、处理执行并管理请求/响应周期。<br><br>
+        <strong>高级 API：</strong>使用 <strong>AI Services</strong> 配合 <code>@Tool</code> 注解的 Java 方法。AI Services 自动将方法转换为 <code>ToolSpecification</code>，在 LLM 请求时执行工具并将结果反馈。
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 3. Low-Level Tool API ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">03</span>
+    <h2 class="section-title">低级工具 API / Low-Level Tool API</h2>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-title">创建 ToolSpecification</div>
+    <div class="bilingual-row">
+      <div class="bilingual-col">
+        <span class="col-tag">EN</span>
+        <p class="col-text">
+          <code>ToolSpecification</code> contains all tool info: name, description, parameters (with their descriptions), and metadata. Two ways to create: <strong>manually</strong> via builder, or <strong>from annotated classes</strong> via <code>ToolSpecifications.toolSpecificationsFrom()</code>.
+        </p>
+      </div>
+      <div class="bilingual-col">
+        <span class="col-tag zh">中文</span>
+        <p class="col-text">
+          <code>ToolSpecification</code> 包含工具的所有信息：名称、描述、参数（含描述）和元数据。两种创建方式：通过 Builder <strong>手动构建</strong>，或通过 <code>ToolSpecifications.toolSpecificationsFrom()</code> 从<strong>注解类</strong>生成。
+        </p>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-header">
+        <span class="code-lang">Java</span>
+        <span class="code-lang-badge">Manual Creation</span>
+      </div>
+      <div class="code-content">
+<pre>ToolSpecification toolSpecification = ToolSpecification.<span class="fn">builder</span>()
+    .<span class="fn">name</span>(<span class="str">"getWeather"</span>)
+    .<span class="fn">description</span>(<span class="str">"Returns the weather forecast for a given city"</span>)
+    .<span class="fn">parameters</span>(JsonObjectSchema.<span class="fn">builder</span>()
+        .<span class="fn">addStringProperty</span>(<span class="str">"city"</span>,
+            <span class="str">"The city for which the weather forecast should be returned"</span>)
+        .<span class="fn">addEnumProperty</span>(<span class="str">"temperatureUnit"</span>,
+            List.<span class="fn">of</span>(<span class="str">"CELSIUS"</span>, <span class="str">"FAHRENHEIT"</span>))
+        .<span class="fn">required</span>(<span class="str">"city"</span>)
+        .<span class="fn">build</span>())
+    .<span class="fn">build</span>();</pre>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-header">
+        <span class="code-lang">Java</span>
+        <span class="code-lang-badge">From Annotated Class</span>
+      </div>
+      <div class="code-content">
+<pre><span class="kw">class</span> <span class="fn">WeatherTools</span> {
+    <span class="ann">@Tool</span>(<span class="str">"Returns the weather forecast for a given city"</span>)
+    String <span class="fn">getWeather</span>(
+        <span class="ann">@P</span>(<span class="str">"The city for which the weather forecast should be returned"</span>)
+        String city,
+        TemperatureUnit temperatureUnit) { ... }
+}
+
+List&lt;ToolSpecification&gt; toolSpecs =
+    ToolSpecifications.<span class="fn">toolSpecificationsFrom</span>(WeatherTools.<span class="kw">class</span>);</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-title">使用 ChatModel 调用</div>
+    <div class="code-block">
+      <div class="code-block-header">
+        <span class="code-lang">Java</span>
+        <span class="code-lang-badge">ChatModel + Tools</span>
+      </div>
+      <div class="code-content">
+<pre><span class="cmt">// 1. 发送带工具的请求</span>
+ChatRequest request = ChatRequest.<span class="fn">builder</span>()
+    .<span class="fn">messages</span>(UserMessage.<span class="fn">from</span>(<span class="str">"What will the weather be like in London tomorrow?"</span>))
+    .<span class="fn">toolSpecifications</span>(toolSpecifications)
+    .<span class="fn">build</span>();
+ChatResponse response = model.<span class="fn">chat</span>(request);
+AiMessage aiMessage = response.<span class="fn">aiMessage</span>();
+
+<span class="cmt">// 2. 检查 LLM 是否请求调用工具</span>
+<span class="kw">if</span> (aiMessage.<span class="fn">hasToolExecutionRequests</span>()) {
+    <span class="cmt">// 3. 手动执行工具</span>
+    String result = <span class="str">"It is expected to rain in London tomorrow."</span>;
+    ToolExecutionResultMessage toolResult =
+        ToolExecutionResultMessage.<span class="fn">from</span>(toolExecutionRequest, result);
+
+    <span class="cmt">// 4. 将结果发回 LLM</span>
+    ChatRequest request2 = ChatRequest.<span class="fn">builder</span>()
+        .<span class="fn">messages</span>(List.<span class="fn">of</span>(userMessage, aiMessage, toolResult))
+        .<span class="fn">toolSpecifications</span>(toolSpecifications)
+        .<span class="fn">build</span>();
+    ChatResponse response2 = model.<span class="fn">chat</span>(request2);
+}</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-title">使用 StreamingChatModel</div>
+    <div class="code-block">
+      <div class="code-block-header">
+        <span class="code-lang">Java</span>
+        <span class="code-lang-badge">Streaming + Tools</span>
+      </div>
+      <div class="code-content">
+<pre>model.<span class="fn">chat</span>(request, <span class="kw">new</span> <span class="fn">StreamingChatResponseHandler</span>() {
+    <span class="kw">public void</span> <span class="fn">onPartialResponse</span>(String partial) { ... }
+    <span class="kw">public void</span> <span class="fn">onPartialToolCall</span>(PartialToolCall partial) { ... }
+    <span class="kw">public void</span> <span class="fn">onCompleteToolCall</span>(CompleteToolCall complete) { ... }
+    <span class="kw">public void</span> <span class="fn">onCompleteResponse</span>(ChatResponse resp) { ... }
+    <span class="kw">public void</span> <span class="fn">onError</span>(Throwable error) { ... }
+});
+
+<span class="cmt">// 流式 tool call 示例：
+// onPartialToolCall(index=0, id="call_abc", name="get_weather", partialArguments="{\"city\":\"London\"}")
+// onCompleteToolCall(index=0, id="call_abc", name="get_weather", arguments="{\"city\":\"London\"}")</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="note-box">
+    <strong>注意：</strong>并非所有 LLM 提供商都支持流式部分工具调用。Bedrock、Google、Mistral、Ollama 等仅返回完整的工具调用，此时 <code>onPartialToolCall</code> 不会被调用。
+  </div>
+</section>
+
+<!-- ═══════════ 4. High-Level Tool API ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">04</span>
+    <h2 class="section-title">高级工具 API / High-Level Tool API</h2>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        Annotate any Java method with <code>@Tool</code> and specify it when creating an AI Service. AI Services automatically convert methods to <code>ToolSpecification</code>s, execute the appropriate method when the LLM requests it, and send the return value back to the LLM.
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        使用 <code>@Tool</code> 注解任意 Java 方法，并在创建 AI Service 时指定。AI Services 自动将方法转换为 <code>ToolSpecification</code>，在 LLM 请求时执行对应方法，并将返回值发回 LLM。
+      </p>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-block-header">
+      <span class="code-lang">Java</span>
+      <span class="code-lang-badge">@Tool Example</span>
+    </div>
+    <div class="code-content">
+<pre><span class="kw">class</span> <span class="fn">Calculator</span> {
+    <span class="ann">@Tool</span>
+    <span class="kw">double</span> <span class="fn">add</span>(<span class="kw">int</span> a, <span class="kw">int</span> b) { <span class="kw">return</span> a + b; }
+
+    <span class="ann">@Tool</span>
+    <span class="kw">double</span> <span class="fn">squareRoot</span>(<span class="kw">double</span> x) { <span class="kw">return</span> Math.<span class="fn">sqrt</span>(x); }
+}
+
+MathGenius mathGenius = AiServices.<span class="fn">builder</span>(MathGenius.<span class="kw">class</span>)
+    .<span class="fn">chatModel</span>(model)
+    .<span class="fn">tools</span>(<span class="kw">new</span> <span class="fn">Calculator</span>())
+    .<span class="fn">build</span>();
+
+String answer = mathGenius.<span class="fn">ask</span>(<span class="str">"What is the square root of 475695037565?"</span>);
+<span class="cmt">// The square root of 475695037565 is 689706.486532.</span></pre>
+    </div>
+  </div>
+
+  <div class="note-box">
+    <strong>@Tool 注解字段：</strong><code>name</code>（工具名称，默认方法名）、<code>value</code>（工具描述）、<code>returnBehavior</code>（返回行为）、<code>metadata</code>（提供商特定元数据 JSON）。
+  </div>
+</section>
+
+<!-- ═══════════ 5. Tool Method Parameters ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">05</span>
+    <h2 class="section-title">工具方法参数 / Tool Method Parameters</h2>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        <code>@Tool</code> methods can accept: primitives, objects, custom POJOs (with nesting), enums, <strong>polymorphic types</strong> (sealed interfaces/classes, <code>@JsonSubTypes</code>), <code>List&lt;T&gt;/Set&lt;T&gt;</code>, <code>Map&lt;K,V&gt;</code>, and <strong>recursive parameters</strong> (OpenAI only). Use <code>@P</code> for parameter name/description, <code>@P(required = false)</code> or <code>Optional&lt;T&gt;</code> for optional params, and <code>@P(defaultValue = "...")</code> for defaults.
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        <code>@Tool</code> 方法可接受：基本类型、对象、自定义 POJO（可嵌套）、枚举、<strong>多态类型</strong>（sealed 接口/类、<code>@JsonSubTypes</code>）、<code>List&lt;T&gt;/Set&lt;T&gt;</code>、<code>Map&lt;K,V&gt;</code> 和<strong>递归参数</strong>（仅 OpenAI）。使用 <code>@P</code> 设置参数名/描述，<code>@P(required = false)</code> 或 <code>Optional&lt;T&gt;</code> 标记可选，<code>@P(defaultValue = "...")</code> 设置默认值。
+      </p>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-block-header">
+      <span class="code-lang">Java</span>
+      <span class="code-lang-badge">@P · Optional · Default Values</span>
+    </div>
+    <div class="code-content">
+<pre><span class="cmt">// @P 自定义参数名和描述</span>
+<span class="ann">@Tool</span>
+<span class="kw">void</span> <span class="fn">getTemperature</span>(
+    <span class="ann">@P</span>(<span class="str">"Temperature value"</span>) <span class="kw">double</span> value,
+    <span class="ann">@P</span>(<span class="str">"Unit of temperature"</span>) Optional&lt;String&gt; unit) { ... }
+
+<span class="cmt">// 默认参数值</span>
+<span class="kw">enum</span> <span class="fn">SortBy</span> { RELEVANCE, DATE, RATING }
+
+<span class="ann">@Tool</span>
+List&lt;Article&gt; <span class="fn">searchArticles</span>(
+    String query,
+    <span class="ann">@P</span>(defaultValue = <span class="str">"10"</span>) <span class="kw">int</span> limit,
+    <span class="ann">@P</span>(defaultValue = <span class="str">"[\"en\"]"</span>) List&lt;String&gt; languages,
+    <span class="ann">@P</span>(defaultValue = <span class="str">"RELEVANCE"</span>) SortBy sortBy) { ... }
+
+<span class="cmt">// 多态参数 (sealed interface)</span>
+<span class="kw">sealed interface</span> <span class="fn">Animal</span> <span class="kw">permits</span> Dog, Cat {}
+<span class="kw">record</span> <span class="fn">Dog</span>(String name, String breed) <span class="kw">implements</span> Animal {}
+<span class="kw">record</span> <span class="fn">Cat</span>(String name, <span class="kw">boolean</span> indoor) <span class="kw">implements</span> Animal {}
+
+<span class="ann">@Tool</span>(<span class="str">"Registers an animal"</span>)
+<span class="kw">void</span> <span class="fn">registerAnimal</span>(Animal animal) { <span class="cmt">/* dispatched to Dog or Cat */</span> }</pre>
+    </div>
+  </div>
+
+  <table class="data-table">
+    <tr><th>Type</th><th>Format</th><th>Example</th></tr>
+    <tr><td>String</td><td>used verbatim</td><td>defaultValue = "USD"</td></tr>
+    <tr><td>Primitive / boxed</td><td>type-specific conversion</td><td>"10", "3.14", "true"</td></tr>
+    <tr><td>enum</td><td>enum constant name</td><td>defaultValue = "EUR"</td></tr>
+    <tr><td>UUID</td><td>UUID.fromString</td><td>"550e8400-e29b-..."</td></tr>
+    <tr><td>List&lt;T&gt; / Set&lt;T&gt; / array</td><td>JSON array</td><td>"[\"a\",\"b\"]"</td></tr>
+    <tr><td>Map&lt;K,V&gt;</td><td>JSON object</td><td>"{\"a\":1,\"b\":2}"</td></tr>
+    <tr><td>POJOs (incl. nested)</td><td>JSON object</td><td>"{\"name\":\"Klaus\"}"</td></tr>
+  </table>
+</section>
+
+<!-- ═══════════ 6. Return Types & Multimodal ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">06</span>
+    <h2 class="section-title">返回类型与多模态 / Return Types &amp; Multimodal</h2>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        <strong>void</strong> → "Success" sent to LLM. <strong>String</strong> → returned as-is. <strong>Other types</strong> → serialized to JSON. For <strong>multimodal</strong> results, return <code>Image</code>, <code>ImageContent</code>, <code>Content</code>, <code>List&lt;Content&gt;</code>, or <code>Content[]</code>. Supported by Anthropic, Bedrock, and Google AI Gemini.
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        <strong>void</strong> → 发送 "Success" 给 LLM。<strong>String</strong> → 原样返回。<strong>其他类型</strong> → 序列化为 JSON。<strong>多模态</strong>结果可返回 <code>Image</code>、<code>ImageContent</code>、<code>Content</code>、<code>List&lt;Content&gt;</code> 或 <code>Content[]</code>。Anthropic、Bedrock 和 Google AI Gemini 支持。
+      </p>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-block-header">
+      <span class="code-lang">Java</span>
+      <span class="code-lang-badge">Multimodal Tool Results</span>
+    </div>
+    <div class="code-content">
+<pre><span class="cmt">// 返回图片</span>
+<span class="ann">@Tool</span>(<span class="str">"Takes a photo and returns it"</span>)
+Image <span class="fn">takePhoto</span>() {
+    <span class="kw">byte</span>[] imageBytes = camera.<span class="fn">capture</span>();
+    <span class="kw">return</span> Image.<span class="fn">builder</span>()
+        .<span class="fn">base64Data</span>(Base64.<span class="fn">getEncoder</span>().<span class="fn">encodeToString</span>(imageBytes))
+        .<span class="fn">mimeType</span>(<span class="str">"image/png"</span>)
+        .<span class="fn">build</span>();
+}
+
+<span class="cmt">// 返回文本 + 图片</span>
+<span class="ann">@Tool</span>(<span class="str">"Takes a photo and returns it with a description"</span>)
+List&lt;Content&gt; <span class="fn">takePhoto</span>() {
+    <span class="kw">return</span> List.<span class="fn">of</span>(
+        TextContent.<span class="fn">from</span>(<span class="str">"Photo taken at "</span> + LocalDateTime.<span class="fn">now</span>()),
+        ImageContent.<span class="fn">from</span>(image)
+    );
+}</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 7. AI Services as Tools ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">07</span>
+    <h2 class="section-title">AI Service 作为工具 / AI Services as Tools</h2>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        AI Services can be used as tools for other AI Services — enabling complex agentic systems. A <strong>RouterAgent</strong> can delegate to specialized experts (Medical, Legal, Technical). Each expert is an AI Service with <code>@Tool</code>-annotated methods. Drawbacks: copy-paste error risk, extra LLM reprocessing cost, and no shared chat memory.
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        AI Service 可作为其他 AI Service 的工具 —— 实现复杂的 Agent 系统。<strong>RouterAgent</strong> 可将请求委托给专业专家（医疗、法律、技术）。每个专家都是带有 <code>@Tool</code> 注解方法的 AI Service。缺点：复制粘贴风险、额外的 LLM 处理成本、无共享聊天记忆。
+      </p>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-block-header">
+      <span class="code-lang">Java</span>
+      <span class="code-lang-badge">Router + Experts</span>
+    </div>
+    <div class="code-content">
+<pre><span class="kw">interface</span> <span class="fn">RouterAgent</span> {
+    <span class="ann">@UserMessage</span>(<span class="str">"Analyze the user request and categorize as 'legal', 'medical' or 'technical', then forward to the corresponding expert. Request: '{{it}}'."</span>)
+    String <span class="fn">askToExpert</span>(String request);
+}
+
+<span class="kw">interface</span> <span class="fn">MedicalExpert</span> {
+    <span class="ann">@Tool</span>(<span class="str">"A medical expert"</span>)
+    <span class="ann">@UserMessage</span>(<span class="str">"You are a medical expert. Analyze: {{it}}"</span>)
+    String <span class="fn">medicalRequest</span>(String request);
+}
+
+<span class="cmt">// 配置 RouterAgent 使用三个专家 AI Service 作为工具</span>
+RouterAgent routerAgent = AiServices.<span class="fn">builder</span>(RouterAgent.<span class="kw">class</span>)
+    .<span class="fn">chatModel</span>(model)
+    .<span class="fn">tools</span>(medicalExpert, legalExpert, technicalExpert)
+    .<span class="fn">build</span>();
+
+routerAgent.<span class="fn">askToExpert</span>(<span class="str">"I broke my leg what should I do"</span>);</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 8. Invocation Params & Context ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">08</span>
+    <h2 class="section-title">调用参数与上下文 / InvocationParameters &amp; Context</h2>
+  </div>
+
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="f-icon">InvocationParameters</div>
+      <div class="f-name">传递额外数据</div>
+      <div class="f-desc">通过 <code>InvocationParameters</code> 向工具传递 LLM 不可见的额外数据（如 userId）。可在 ToolProvider、ErrorHandler、RAG 组件中访问。</div>
+    </div>
+    <div class="feature-card">
+      <div class="f-icon">InvocationContext</div>
+      <div class="f-name">获取调用信息</div>
+      <div class="f-desc"><code>@Tool</code> 方法可接受 <code>InvocationContext</code> 参数，获取 invocationId、接口名称等调用元信息。</div>
+    </div>
+    <div class="feature-card">
+      <div class="f-icon">@ToolMemoryId</div>
+      <div class="f-name">多用户记忆隔离</div>
+      <div class="f-desc">将 AI Service 的 <code>@MemoryId</code> 值自动传递到 <code>@Tool</code> 方法中，区分不同用户/会话。</div>
+    </div>
+    <div class="feature-card">
+      <div class="f-icon">@Description</div>
+      <div class="f-name">类与字段描述</div>
+      <div class="f-desc">使用 <code>@Description</code> 注解类、字段，帮助 LLM 理解参数结构。注意：枚举值上的 @Description 无效。</div>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-block-header">
+      <span class="code-lang">Java</span>
+      <span class="code-lang-badge">InvocationParameters + @ToolMemoryId</span>
+    </div>
+    <div class="code-content">
+<pre><span class="cmt">// InvocationParameters — LLM 不可见</span>
+<span class="kw">interface</span> <span class="fn">Assistant</span> {
+    String <span class="fn">chat</span>(<span class="ann">@UserMessage</span> String msg, InvocationParameters params);
+}
+
+<span class="kw">class</span> <span class="fn">Tools</span> {
+    <span class="ann">@Tool</span>
+    String <span class="fn">getWeather</span>(String city, InvocationParameters params) {
+        String userId = params.<span class="fn">get</span>(<span class="str">"userId"</span>);
+        <span class="kw">return</span> weatherService.<span class="fn">getWeather</span>(city, getUserPreferences(userId));
+    }
+}
+
+<span class="cmt">// @ToolMemoryId — 区分不同用户</span>
+<span class="kw">interface</span> <span class="fn">Assistant</span> {
+    String <span class="fn">chat</span>(<span class="ann">@UserMessage</span> String msg, <span class="ann">@MemoryId</span> memoryId);
+}
+
+<span class="kw">class</span> <span class="fn">Tools</span> {
+    <span class="ann">@Tool</span>
+    String <span class="fn">addCalendarEvent</span>(CalendarEvent event, <span class="ann">@ToolMemoryId</span> memoryId) { ... }
+}</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 9. Concurrent Execution & Access ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">09</span>
+    <h2 class="section-title">并发执行与结果访问 / Concurrent Execution &amp; Access</h2>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        <strong>Concurrent execution:</strong> By default, tools execute sequentially. Enable <code>executeToolsConcurrently()</code> or <code>executeToolsConcurrently(Executor)</code> for parallel execution. With ChatModel, single tool runs in caller thread; multiple tools use Executor. With StreamingChatModel, all tools use Executor threads.<br><br>
+        <strong>Accessing results:</strong> Wrap return type in <code>Result&lt;T&gt;</code> to get <code>toolExecutions()</code> list. In streaming, use <code>onToolExecuted</code> callback.
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        <strong>并发执行：</strong>默认顺序执行。启用 <code>executeToolsConcurrently()</code> 或 <code>executeToolsConcurrently(Executor)</code> 实现并行。ChatModel 下单个工具在调用线程执行，StreamingChatModel 下所有工具使用 Executor 线程。<br><br>
+        <strong>访问结果：</strong>将返回类型包装为 <code>Result&lt;T&gt;</code> 获取 <code>toolExecutions()</code> 列表。流式模式下使用 <code>onToolExecuted</code> 回调。
+      </p>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-block-header">
+      <span class="code-lang">Java</span>
+      <span class="code-lang-badge">Result + onToolExecuted</span>
+    </div>
+    <div class="code-content">
+<pre><span class="cmt">// 同步模式</span>
+<span class="kw">interface</span> <span class="fn">Assistant</span> {
+    Result&lt;String&gt; <span class="fn">chat</span>(String userMessage);
+}
+
+Result&lt;String&gt; result = assistant.<span class="fn">chat</span>(<span class="str">"Cancel my booking 123-456"</span>);
+List&lt;ToolExecution&gt; toolExecs = result.<span class="fn">toolExecutions</span>();
+ToolExecution exec = toolExecs.<span class="fn">get</span>(<span class="num">0</span>);
+String reqResult = exec.<span class="fn">result</span>();           <span class="cmt">// 文本结果</span>
+List&lt;Content&gt; contents = exec.<span class="fn">resultContents</span>();  <span class="cmt">// 含图片</span>
+Object obj = exec.<span class="fn">resultObject</span>();               <span class="cmt">// 原始返回值</span>
+
+<span class="cmt">// 流式模式</span>
+tokenStream
+    .<span class="fn">onToolExecuted</span>(toolExecution -> System.out.<span class="fn">println</span>(toolExecution))
+    .<span class="fn">onPartialResponse</span>(...)
+    .<span class="fn">onCompleteResponse</span>(...)
+    .<span class="fn">start</span>();</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 10. Programmatic & Dynamic Tools ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">10</span>
+    <h2 class="section-title">编程式与动态工具 / Programmatic &amp; Dynamic Tools</h2>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        <strong>Programmatic:</strong> Define tools via <code>ToolSpecification</code> + <code>ToolExecutor</code> pairs, wrapped in <code>AiServiceTool</code>. Tools can be loaded from databases or config files.<br><br>
+        <strong>Dynamic (ToolProvider):</strong> Tools provided per invocation based on <code>ToolProviderRequest</code> (user message, memory ID, invocation parameters). Static and dynamic tools are merged together.
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        <strong>编程式：</strong>通过 <code>ToolSpecification</code> + <code>ToolExecutor</code> 对定义工具，包装在 <code>AiServiceTool</code> 中。工具可从数据库或配置文件加载。<br><br>
+        <strong>动态（ToolProvider）：</strong>每次调用时根据 <code>ToolProviderRequest</code>（用户消息、memory ID、调用参数）动态提供工具。静态和动态工具会合并。
+      </p>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-block-header">
+      <span class="code-lang">Java</span>
+      <span class="code-lang-badge">Programmatic + Dynamic</span>
+    </div>
+    <div class="code-content">
+<pre><span class="cmt">// 编程式工具</span>
+AiServiceTool tool = AiServiceTool.<span class="fn">builder</span>()
+    .<span class="fn">toolSpecification</span>(toolSpecification)
+    .<span class="fn">toolExecutor</span>(toolExecutor)
+    .<span class="fn">build</span>();
+
+Assistant assistant = AiServices.<span class="fn">builder</span>(Assistant.<span class="kw">class</span>)
+    .<span class="fn">chatModel</span>(chatModel)
+    .<span class="fn">tools</span>(List.<span class="fn">of</span>(tool))
+    .<span class="fn">build</span>();
+
+<span class="cmt">// 动态工具 — 仅当消息含 "booking" 时提供</span>
+ToolProvider toolProvider = (toolProviderRequest) -> {
+    <span class="kw">if</span> (toolProviderRequest.<span class="fn">userMessage</span>().<span class="fn">singleText</span>().<span class="fn">contains</span>(<span class="str">"booking"</span>)) {
+        <span class="kw">return</span> ToolProviderResult.<span class="fn">builder</span>()
+            .<span class="fn">add</span>(toolSpecification, toolExecutor)
+            .<span class="fn">build</span>();
+    }
+    <span class="kw">return null</span>;
+};</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 11. Tool Search ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">11</span>
+    <h2 class="section-title">工具搜索 / Tool Search</h2>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        When you have many tools (dozens/hundreds), sending all on every request wastes tokens. <strong>Tool Search</strong> lets the LLM discover tools dynamically: initially only tool-search tools are exposed, the LLM calls them to find relevant tools, and matching tools are added to subsequent requests. Found tools are accumulated (merged, not replaced). Two built-in strategies: <code>SimpleToolSearchStrategy</code> (keyword) and <code>VectorToolSearchStrategy</code> (embeddings).
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        当工具数量众多（数十/数百）时，每次请求都发送全部工具会浪费 token。<strong>工具搜索</strong>让 LLM 动态发现工具：初始仅暴露工具搜索工具，LLM 调用它们查找相关工具，匹配的工具被添加到后续请求中。已找到的工具会累积（合并而非替换）。两种内置策略：<code>SimpleToolSearchStrategy</code>（关键词）和 <code>VectorToolSearchStrategy</code>（嵌入向量）。
+      </p>
+    </div>
+  </div>
+
+  <div class="flow-steps">
+    <div class="flow-step">
+      <div class="step-num">1</div>
+      <div class="step-title">初始请求</div>
+      <div class="step-desc">LLM 仅看到工具搜索工具</div>
+    </div>
+    <div class="flow-step">
+      <div class="step-num">2</div>
+      <div class="step-title">工具搜索</div>
+      <div class="step-desc">LLM 调用搜索工具，描述所需工具</div>
+    </div>
+    <div class="flow-step">
+      <div class="step-num">3</div>
+      <div class="step-title">工具暴露</div>
+      <div class="step-desc">匹配的工具添加到下一请求</div>
+    </div>
+    <div class="flow-step">
+      <div class="step-num">4</div>
+      <div class="step-title">工具执行</div>
+      <div class="step-desc">LLM 正常调用找到的工具</div>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-block-header">
+      <span class="code-lang">Java</span>
+      <span class="code-lang-badge">ToolSearch Configuration</span>
+    </div>
+    <div class="code-content">
+<pre>Assistant assistant = AiServices.<span class="fn">builder</span>(Assistant.<span class="kw">class</span>)
+    .<span class="fn">chatModel</span>(chatModel)
+    .<span class="fn">chatMemory</span>(chatMemory)
+    .<span class="fn">tools</span>(tools)
+    .<span class="fn">toolProvider</span>(mcpToolProvider)
+    .<span class="fn">toolSearchStrategy</span>(<span class="kw">new</span> <span class="fn">SimpleToolSearchStrategy</span>())
+    .<span class="fn">build</span>();
+
+<span class="cmt">// 始终可见的工具</span>
+<span class="ann">@Tool</span>(searchBehavior = ALWAYS_VISIBLE)
+String <span class="fn">getWeather</span>(String city) { ... }</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 12. ReturnBehavior ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">12</span>
+    <h2 class="section-title">即时返回 / ReturnBehavior</h2>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        <strong>TO_LLM (default):</strong> Tool result sent back to LLM for reprocessing.<br>
+        <strong>IMMEDIATE:</strong> Tool result returned directly, skipping LLM reprocessing. <code>Result.content()</code> will be <code>null</code>; use <code>result.toolExecutions()</code>.<br>
+        <strong>IMMEDIATE_IF_LAST:</strong> Returns immediately when this tool is the last in the LLM's response — saves one LLM round trip for multi-step action sequences.
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        <strong>TO_LLM（默认）：</strong>工具结果发回 LLM 重新处理。<br>
+        <strong>IMMEDIATE：</strong>工具结果直接返回，跳过 LLM 重新处理。<code>Result.content()</code> 为 <code>null</code>；使用 <code>result.toolExecutions()</code> 获取。<br>
+        <strong>IMMEDIATE_IF_LAST：</strong>当此工具是 LLM 响应中的最后一个时立即返回 —— 为多步骤操作序列节省一次 LLM 往返。
+      </p>
+    </div>
+  </div>
+
+  <table class="data-table">
+    <tr><th>Tool calls in response</th><th>Outcome</th><th>Why</th></tr>
+    <tr><td>[IMMEDIATE]</td><td>return immediately</td><td>only tool is IMMEDIATE</td></tr>
+    <tr><td>[IMMEDIATE, IMMEDIATE]</td><td>return immediately</td><td>every tool is IMMEDIATE</td></tr>
+    <tr><td>[IMMEDIATE, TO_LLM]</td><td>reprocess</td><td>TO_LLM disqualifies</td></tr>
+    <tr><td>[IMMEDIATE_IF_LAST]</td><td>return immediately</td><td>last tool is IMMEDIATE_IF_LAST</td></tr>
+    <tr><td>[TO_LLM, IMMEDIATE_IF_LAST]</td><td>return immediately</td><td>last tool is IMMEDIATE_IF_LAST</td></tr>
+    <tr><td>[IMMEDIATE_IF_LAST, TO_LLM]</td><td>reprocess</td><td>not last + TO_LLM present</td></tr>
+    <tr><td>[IMMEDIATE_IF_LAST(err)]</td><td>reprocess</td><td>any error disables immediate return</td></tr>
+  </table>
+</section>
+
+<!-- ═══════════ 13. Error Handling ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">13</span>
+    <h2 class="section-title">错误处理 / Error Handling</h2>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        <strong>Hallucinated Tool Names:</strong> Configure <code>hallucinatedToolNameStrategy</code> to return a helpful error message instead of throwing.<br>
+        <strong>Tool Arguments Errors:</strong> Use <code>ToolArgumentsErrorHandler</code> — return error text for LLM to self-correct, or throw to abort.<br>
+        <strong>Tool Execution Errors:</strong> Use <code>ToolExecutionErrorHandler</code> — default sends exception message to LLM (not recommended for production). Sanitize with a custom handler.
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        <strong>幻觉工具名：</strong>配置 <code>hallucinatedToolNameStrategy</code> 返回有用错误信息而非抛出异常。<br>
+        <strong>工具参数错误：</strong>使用 <code>ToolArgumentsErrorHandler</code> —— 返回错误文本让 LLM 自我纠正，或抛异常中止。<br>
+        <strong>工具执行错误：</strong>使用 <code>ToolExecutionErrorHandler</code> —— 默认发送异常消息给 LLM（生产环境不推荐），用自定义处理器清理。
+      </p>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-block-header">
+      <span class="code-lang">Java</span>
+      <span class="code-lang-badge">Error Handlers</span>
+    </div>
+    <div class="code-content">
+<pre><span class="cmt">// 幻觉工具名处理</span>
+Assistant assistant = AiServices.<span class="fn">builder</span>(Assistant.<span class="kw">class</span>)
+    .<span class="fn">chatModel</span>(model)
+    .<span class="fn">tools</span>(<span class="kw">new</span> <span class="fn">HelloWorld</span>())
+    .<span class="fn">hallucinatedToolNameStrategy</span>(toolExecutionRequest ->
+        ToolExecutionResultMessage.<span class="fn">from</span>(toolExecutionRequest,
+            <span class="str">"Error: there is no tool called "</span> + toolExecutionRequest.<span class="fn">name</span>()))
+    .<span class="fn">build</span>();
+
+<span class="cmt">// 参数错误 — 推荐：让 LLM 重试</span>
+.<span class="fn">toolArgumentsErrorHandler</span>((error, ctx) ->
+    ToolErrorHandlerResult.<span class="fn">text</span>(error.<span class="fn">getMessage</span>()))
+
+<span class="cmt">// 执行错误 — 生产环境推荐：返回通用消息</span>
+.<span class="fn">toolExecutionErrorHandler</span>((error, ctx) ->
+    ToolErrorHandlerResult.<span class="fn">text</span>(<span class="str">"Tool execution failed."</span>))</pre>
+    </div>
+  </div>
+
+  <div class="note-box warn">
+    <strong>安全警告：</strong>默认的工具执行错误处理会将原始异常消息发送给 LLM。生产环境中这可能泄露内部数据（堆栈跟踪、文件路径、凭证、PII 等）。请配置自定义 <code>ToolExecutionErrorHandler</code> 返回通用或经过清理的错误描述。
+  </div>
+</section>
+
+<!-- ═══════════ 14. MCP ═══════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">14</span>
+    <h2 class="section-title">模型上下文协议 / MCP</h2>
+  </div>
+
+  <div class="bilingual-row">
+    <div class="bilingual-col">
+      <span class="col-tag">EN</span>
+      <p class="col-text">
+        You can also import tools from <strong>MCP (Model Context Protocol)</strong> servers. This allows LangChain4j applications to leverage tools exposed by MCP-compatible services, expanding the tool ecosystem beyond locally defined methods.
+      </p>
+    </div>
+    <div class="bilingual-col">
+      <span class="col-tag zh">中文</span>
+      <p class="col-text">
+        你也可以从 <strong>MCP（模型上下文协议）</strong>服务器导入工具。这使得 LangChain4j 应用程序能够利用 MCP 兼容服务暴露的工具，将工具生态扩展到本地定义的方法之外。
+      </p>
+    </div>
+  </div>
+
+  <div class="note-box">
+    <strong>总结：</strong>Tools (Function Calling) 是 LangChain4j 中最强大的功能之一。从低级的 <code>ToolSpecification</code> 到高级的 <code>@Tool</code> 注解，从静态工具到动态 ToolProvider，从工具搜索到即时返回，LangChain4j 提供了完整的工具调用生命周期管理。结合 MCP 协议，你可以构建真正可扩展的 AI Agent 系统。
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<footer class="footer">
+  <div class="gear-small"></div>
+  <p>LangChain4j Tools (Function Calling) · 中英双语参考文档</p>
+  <p style="margin-top: 4px; opacity: 0.5;">基于 LangChain4j 官方文档</p>
+</footer>
+
+</body>
+</html>
