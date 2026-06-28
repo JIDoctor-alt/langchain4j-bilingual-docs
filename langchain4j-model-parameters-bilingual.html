@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LangChain4j — Model Parameters / 模型参数</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-deep: #0a1628;
+  --bg-mid: #0f1f36;
+  --bg-surface: #132744;
+  --bg-card: #162d50;
+  --blueprint: #4da6ff;
+  --blueprint-dim: #2a6eb5;
+  --blueprint-glow: #7cc4ff;
+  --cyan: #39d0d8;
+  --cyan-dim: #1e8a90;
+  --amber: #e8a850;
+  --amber-dim: #b87a30;
+  --mint: #5cdb8b;
+  --mint-dim: #3a9a5c;
+  --white: #dce6f0;
+  --white-dim: #8899b4;
+  --white-faint: #4a5f7a;
+  --grid: rgba(77, 166, 255, 0.06);
+  --grid-strong: rgba(77, 166, 255, 0.12);
+  --border: rgba(77, 166, 255, 0.15);
+  --border-strong: rgba(77, 166, 255, 0.25);
+  --code-bg: rgba(13, 27, 42, 0.7);
+  --code-border: rgba(77, 166, 255, 0.18);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.3);
+  --shadow-glow: 0 0 40px rgba(77, 166, 255, 0.06);
+  --radius: 3px;
+  --transition: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  background: var(--bg-deep);
+}
+
+body {
+  font-family: 'IBM Plex Mono', 'Noto Sans SC', monospace;
+  color: var(--white);
+  background: var(--bg-deep);
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* ── Blueprint Grid ── */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 20%, rgba(77, 166, 255, 0.04) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 80% 60%, rgba(232, 168, 80, 0.03) 0%, transparent 70%);
+}
+
+/* ── Hero ── */
+.hero {
+  position: relative;
+  background: linear-gradient(180deg, var(--bg-mid) 0%, var(--bg-deep) 100%);
+  padding: 90px 0 70px;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border);
+  z-index: 1;
+}
+
+.hero-geo {
+  position: absolute;
+  top: 0; right: 0; bottom: 0; width: 50%;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.hero-geo svg {
+  width: 100%;
+  height: 100%;
+}
+
+.hero-geo line,
+.hero-geo circle,
+.hero-geo rect {
+  stroke: var(--blueprint);
+  stroke-width: 0.5;
+  fill: none;
+  opacity: 0.15;
+}
+
+.hero-inner {
+  position: relative;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 40px;
+  z-index: 2;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--blueprint);
+  margin-bottom: 24px;
+  animation: fadeIn 0.6s ease-out;
+}
+
+.hero-badge::before {
+  content: '';
+  width: 20px;
+  height: 1px;
+  background: var(--blueprint);
+  opacity: 0.5;
+}
+
+.hero h1 {
+  font-family: 'DM Serif Display', 'Noto Serif SC', serif;
+  font-size: clamp(34px, 5.5vw, 60px);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -0.3px;
+  color: var(--white);
+  margin-bottom: 10px;
+  animation: fadeIn 0.6s ease-out 0.1s both;
+}
+
+.hero h1 .zh {
+  display: block;
+  font-size: 0.45em;
+  font-weight: 500;
+  color: var(--white-dim);
+  margin-top: 4px;
+  letter-spacing: 3px;
+  font-family: 'Noto Serif SC', 'IBM Plex Mono', serif;
+}
+
+.hero-subtitle {
+  font-family: 'IBM Plex Mono', 'Noto Sans SC', monospace;
+  font-size: 14px;
+  color: var(--white-dim);
+  max-width: 560px;
+  line-height: 1.65;
+  animation: fadeIn 0.6s ease-out 0.2s both;
+}
+
+.hero-subtitle .zh {
+  display: block;
+  margin-top: 6px;
+  color: var(--white-faint);
+  font-size: 0.9em;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Nav ── */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10, 22, 40, 0.9);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 40px;
+}
+
+.nav-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  overflow-x: auto;
+  padding: 10px 0;
+  scrollbar-width: none;
+}
+
+.nav-inner::-webkit-scrollbar { display: none; }
+
+.nav-link {
+  font-family: 'IBM Plex Mono', 'Noto Sans SC', monospace;
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--white-dim);
+  text-decoration: none;
+  padding: 5px 14px;
+  white-space: nowrap;
+  transition: var(--transition);
+  letter-spacing: 0.3px;
+  border: 1px solid transparent;
+  position: relative;
+}
+
+.nav-link:hover {
+  color: var(--blueprint);
+  border-color: var(--blueprint-dim);
+  background: rgba(77, 166, 255, 0.04);
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -1px; left: 14px; right: 14px;
+  height: 1px;
+  background: var(--blueprint);
+  transform: scaleX(0);
+  transition: transform 0.25s ease;
+}
+
+.nav-link:hover::after {
+  transform: scaleX(1);
+}
+
+/* ── Main ── */
+.main {
+  position: relative;
+  z-index: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 40px 80px;
+}
+
+.section {
+  margin-top: 80px;
+  scroll-margin-top: 80px;
+}
+
+.section:first-of-type { margin-top: 60px; }
+
+.section-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--blueprint);
+  letter-spacing: 3px;
+  margin-bottom: 6px;
+}
+
+.section h2 {
+  font-family: 'DM Serif Display', 'Noto Serif SC', serif;
+  font-size: clamp(24px, 3.5vw, 34px);
+  font-weight: 400;
+  color: var(--white);
+  margin-bottom: 6px;
+  line-height: 1.25;
+  letter-spacing: -0.2px;
+}
+
+.section h2 .zh {
+  display: block;
+  font-size: 0.48em;
+  font-weight: 500;
+  color: var(--white-dim);
+  margin-top: 2px;
+  letter-spacing: 2px;
+}
+
+.section-lead {
+  font-family: 'IBM Plex Mono', 'Noto Sans SC', monospace;
+  font-size: 13.5px;
+  color: var(--white-dim);
+  max-width: 680px;
+  margin-bottom: 32px;
+  line-height: 1.7;
+}
+
+/* ── Bilingual Block ── */
+.bilingual {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-card);
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.bilingual:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-card), var(--shadow-glow);
+}
+
+.bilingual::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--blueprint-dim), transparent);
+  opacity: 0.4;
+}
+
+.en-col, .zh-col {
+  padding: 26px 30px;
+  position: relative;
+}
+
+.en-col {
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
+}
+
+.zh-col {
+  background: rgba(15, 31, 54, 0.6);
+}
+
+.col-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  display: inline-block;
+  padding: 2px 10px;
+  border: 1px solid;
+}
+
+.en-col .col-tag {
+  color: var(--blueprint);
+  border-color: var(--blueprint-dim);
+}
+
+.zh-col .col-tag {
+  color: var(--amber);
+  border-color: var(--amber-dim);
+}
+
+.bilingual h3 {
+  font-family: 'DM Serif Display', 'Noto Serif SC', serif;
+  font-size: 19px;
+  font-weight: 400;
+  color: var(--white);
+  margin-bottom: 10px;
+  line-height: 1.35;
+}
+
+.bilingual p {
+  font-size: 13px;
+  color: var(--white-dim);
+  line-height: 1.75;
+  margin-bottom: 9px;
+}
+
+.bilingual p:last-child { margin-bottom: 0; }
+
+.bilingual strong {
+  color: var(--white);
+  font-weight: 500;
+}
+
+.bilingual code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px;
+  border: 1px solid var(--code-border);
+  border-radius: 2px;
+  color: var(--blueprint);
+}
+
+.bilingual ul {
+  list-style: none;
+  padding: 0;
+  margin-top: 6px;
+}
+
+.bilingual ul li {
+  font-size: 13px;
+  color: var(--white-dim);
+  padding: 3px 0 3px 16px;
+  position: relative;
+  line-height: 1.6;
+}
+
+.bilingual ul li::before {
+  content: '›';
+  position: absolute;
+  left: 0;
+  color: var(--blueprint-dim);
+  font-weight: 600;
+}
+
+/* ── Code Block ── */
+.code-block {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  margin: 16px 0 20px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: var(--shadow-card);
+}
+
+.code-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 16px;
+  background: rgba(0,0,0,0.2);
+  border-bottom: 1px solid var(--code-border);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--white-faint);
+  letter-spacing: 0.5px;
+}
+
+.code-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.code-dots span {
+  display: block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  opacity: 0.6;
+}
+
+.code-dots span:nth-child(1) { background: var(--blueprint); }
+.code-dots span:nth-child(2) { background: var(--amber); }
+.code-dots span:nth-child(3) { background: var(--mint); }
+
+.code-block pre {
+  padding: 18px 22px;
+  margin: 0;
+  overflow-x: auto;
+  font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--white);
+  tab-size: 4;
+}
+
+.code-block pre .kw { color: #6b8fcc; font-weight: 500; }
+.code-block pre .type { color: var(--blueprint); }
+.code-block pre .str { color: var(--mint); }
+.code-block pre .cmt { color: var(--white-faint); font-style: italic; }
+.code-block pre .fn { color: var(--amber); }
+.code-block pre .ann { color: var(--cyan); }
+.code-block pre .num { color: var(--cyan-dim); }
+
+/* ── Table ── */
+.table-wrap {
+  overflow-x: auto;
+  margin: 20px 0;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+}
+
+.table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  font-family: 'IBM Plex Mono', 'Noto Sans SC', monospace;
+}
+
+.table-wrap thead th {
+  background: var(--bg-mid);
+  color: var(--blueprint);
+  font-weight: 500;
+  font-size: 10.5px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 14px 18px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.table-wrap tbody td {
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+  color: var(--white-dim);
+  line-height: 1.55;
+  background: var(--bg-surface);
+}
+
+.table-wrap tbody tr:last-child td { border-bottom: none; }
+.table-wrap tbody tr:hover td { background: rgba(77, 166, 255, 0.04); color: var(--white); }
+
+.table-wrap tbody td:first-child {
+  color: var(--blueprint);
+  font-weight: 500;
+}
+
+.table-wrap tbody td:nth-child(3) {
+  color: var(--cyan-dim);
+  font-size: 11.5px;
+}
+
+/* ── Note ── */
+.note {
+  background: rgba(77, 166, 255, 0.04);
+  border: 1px solid rgba(77, 166, 255, 0.15);
+  border-left: 3px solid var(--blueprint);
+  padding: 15px 20px;
+  margin: 20px 0;
+  font-size: 13px;
+  color: var(--white-dim);
+  line-height: 1.7;
+}
+
+.note strong {
+  color: var(--blueprint);
+  font-weight: 500;
+}
+
+.note .zh {
+  display: block;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(77, 166, 255, 0.1);
+  color: var(--white-faint);
+  font-size: 0.93em;
+}
+
+/* ── Framework Cards ── */
+.fw-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 20px 0 24px;
+}
+
+.fw-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  padding: 26px;
+  box-shadow: var(--shadow-card);
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.fw-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-card), var(--shadow-glow);
+}
+
+.fw-card::before {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 80px; height: 80px;
+  border-left: 1px solid rgba(77, 166, 255, 0.06);
+  border-bottom: 1px solid rgba(77, 166, 255, 0.06);
+  opacity: 0.5;
+}
+
+.fw-card .fw-icon {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  display: inline-block;
+  padding: 3px 10px;
+  border: 1px solid;
+}
+
+.fw-card .fw-icon.quarkus { color: var(--cyan); border-color: var(--cyan-dim); }
+.fw-card .fw-icon.spring { color: var(--mint); border-color: var(--mint-dim); }
+
+.fw-card h4 {
+  font-family: 'DM Serif Display', 'Noto Serif SC', serif;
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--white);
+  margin-bottom: 8px;
+}
+
+.fw-card p {
+  font-size: 13px;
+  color: var(--white-dim);
+  line-height: 1.65;
+}
+
+/* ── Footer ── */
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 36px 40px;
+  text-align: center;
+  margin-top: 80px;
+  position: relative;
+  z-index: 1;
+}
+
+.footer-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  font-size: 12px;
+  color: var(--white-faint);
+  font-family: 'IBM Plex Mono', 'Noto Sans SC', monospace;
+}
+
+.footer-inner a {
+  color: var(--blueprint);
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+.footer-inner a:hover { color: var(--blueprint-glow); }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .hero { padding: 60px 0 50px; }
+  .hero-inner, .main, .nav { padding-left: 20px; padding-right: 20px; }
+
+  .bilingual {
+    grid-template-columns: 1fr;
+  }
+
+  .en-col {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .fw-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-geo { display: none; }
+}
+
+@media (max-width: 480px) {
+  .nav-inner { gap: 0; }
+  .nav-link { font-size: 10.5px; padding: 5px 10px; }
+  .en-col, .zh-col { padding: 18px; }
+}
+
+@media print {
+  body::before, body::after, .hero-geo { display: none; }
+  .nav { position: static; }
+  .bilingual { break-inside: avoid; }
+  body { background: #fff; color: #000; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ HERO ═══════════════ -->
+<section class="hero">
+  <div class="hero-geo">
+    <svg viewBox="0 0 600 400" preserveAspectRatio="none">
+      <line x1="0" y1="50" x2="600" y2="50" />
+      <line x1="0" y1="120" x2="600" y2="120" />
+      <line x1="0" y1="200" x2="600" y2="200" />
+      <line x1="0" y1="300" x2="600" y2="300" />
+      <line x1="100" y1="0" x2="100" y2="400" />
+      <line x1="260" y1="0" x2="260" y2="400" />
+      <line x1="440" y1="0" x2="440" y2="400" />
+      <circle cx="440" cy="200" r="80" />
+      <circle cx="440" cy="200" r="50" />
+      <circle cx="260" cy="120" r="30" />
+      <rect x="350" y="260" width="60" height="60" />
+      <line x1="260" y1="120" x2="350" y2="290" />
+      <line x1="260" y1="120" x2="410" y2="290" />
+    </svg>
+  </div>
+  <div class="hero-inner">
+    <div class="hero-badge">LangChain4j · Configuration</div>
+    <h1>
+      Model Parameters
+      <span class="zh">模型参数</span>
+    </h1>
+    <p class="hero-subtitle">
+      Adjust creativity, determinism, connectivity, and more. Configure models via builder pattern, Quarkus, or Spring Boot.
+      <span class="zh">调整创造力、确定性、连接性等参数。通过构建器模式、Quarkus 或 Spring Boot 配置模型。</span>
+    </p>
+  </div>
+</section>
+
+<!-- ═══════════════ NAV ═══════════════ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#overview" class="nav-link">Overview / 概述</a>
+    <a href="#params-table" class="nav-link">Parameters / 参数表</a>
+    <a href="#creation" class="nav-link">Creation / 创建方式</a>
+    <a href="#builder" class="nav-link">Builder / 构建器</a>
+    <a href="#quarkus" class="nav-link">Quarkus</a>
+    <a href="#spring" class="nav-link">Spring Boot</a>
+  </div>
+</nav>
+
+<!-- ═══════════════ MAIN ═══════════════ -->
+<main class="main">
+
+  <!-- ─── Overview ─── -->
+  <section class="section" id="overview">
+    <div class="section-num">01</div>
+    <h2>
+      Overview
+      <span class="zh">概述</span>
+    </h2>
+    <p class="section-lead">
+      Depending on the model and provider you choose, you can adjust numerous parameters that define the model's output and connectivity.
+    </p>
+
+    <div class="bilingual">
+      <div class="en-col">
+        <span class="col-tag">EN</span>
+        <h3>Two Categories of Parameters</h3>
+        <p><strong>Model Output</strong> — the level of creativity or determinism in the generated content (text, images), the volume of content generated, etc.</p>
+        <p><strong>Connectivity</strong> — base URL, authorization keys, timeouts, retries, logging, etc.</p>
+        <p>Typically, you will find all the parameters and their meaning on the model provider's website. For example, OpenAI API's parameters can be found at <code>platform.openai.com/docs/api-reference/chat</code>.</p>
+      </div>
+      <div class="zh-col">
+        <span class="col-tag">中文</span>
+        <h3>两类参数</h3>
+        <p><strong>模型输出</strong> — 生成内容（文本、图像）的创造力或确定性程度、生成内容的数量等。</p>
+        <p><strong>连接性</strong> — 基础 URL、授权密钥、超时、重试、日志记录等。</p>
+        <p>通常，你可以在模型提供商的网站上找到所有参数及其含义。例如，OpenAI API 的参数可在 <code>platform.openai.com/docs/api-reference/chat</code> 查阅。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Parameters Table ─── -->
+  <section class="section" id="params-table">
+    <div class="section-num">02</div>
+    <h2>
+      Common Parameters
+      <span class="zh">常用参数</span>
+    </h2>
+    <p class="section-lead">
+      Key OpenAI API parameters. For the full list, see the OpenAI Language Model page. Full lists per model can be found under Integration, Language Model and Image Model pages.
+    </p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Parameter / 参数</th>
+            <th>Description / 描述</th>
+            <th>Type / 类型</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>modelName</code></td>
+            <td>The name of the model to use (e.g., <code>gpt-4o</code>, <code>gpt-4o-mini</code>, etc.)<br><span style="color: var(--white-faint);">要使用的模型名称</span></td>
+            <td>String</td>
+          </tr>
+          <tr>
+            <td><code>temperature</code></td>
+            <td>What sampling temperature to use, between 0 and 2. Higher values like 0.8 make output more random; lower values like 0.2 make it more focused and deterministic.<br><span style="color: var(--white-faint);">采样温度，0~2。值越高越随机，越低越聚焦和确定</span></td>
+            <td>Double</td>
+          </tr>
+          <tr>
+            <td><code>maxTokens</code></td>
+            <td>The maximum number of tokens that can be generated in the chat completion.<br><span style="color: var(--white-faint);">聊天补全中可生成的最大 token 数</span></td>
+            <td>Integer</td>
+          </tr>
+          <tr>
+            <td><code>frequencyPenalty</code></td>
+            <td>Number between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency, decreasing the likelihood of repeating the same line verbatim.<br><span style="color: var(--white-faint);">-2.0~2.0，正值根据已有频率惩罚新 token，降低逐字重复概率</span></td>
+            <td>Double</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ─── Creation Methods ─── -->
+  <section class="section" id="creation">
+    <div class="section-num">03</div>
+    <h2>
+      Creation Methods
+      <span class="zh">创建方式</span>
+    </h2>
+    <p class="section-lead">
+      You can create <code>*Model</code> in two ways: a static factory with sensible defaults, or a builder pattern for full control.
+    </p>
+
+    <div class="bilingual">
+      <div class="en-col">
+        <span class="col-tag">EN</span>
+        <h3>Static Factory</h3>
+        <p>A static factory that accepts only the mandatory parameters, such as API keys, with all other parameters set to <strong>sensible defaults</strong>.</p>
+
+        <h3 style="margin-top: 24px;">Builder Pattern</h3>
+        <p>A builder pattern: here, you can specify the value for <strong>each parameter</strong> individually, giving you full control over the model configuration.</p>
+      </div>
+      <div class="zh-col">
+        <span class="col-tag">中文</span>
+        <h3>静态工厂</h3>
+        <p>静态工厂方法仅接受必需参数（如 API 密钥），其余参数均设置为<strong>合理的默认值</strong>。</p>
+
+        <h3 style="margin-top: 24px;">构建器模式</h3>
+        <p>构建器模式：你可以为<strong>每个参数</strong>单独指定值，从而完全掌控模型配置。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Builder ─── -->
+  <section class="section" id="builder">
+    <div class="section-num">04</div>
+    <h2>
+      Model Builder
+      <span class="zh">模型构建器</span>
+    </h2>
+    <p class="section-lead">
+      We can set every available parameter of the model using the builder pattern as follows.
+    </p>
+
+    <div class="bilingual">
+      <div class="en-col">
+        <span class="col-tag">EN</span>
+        <h3>OpenAiChatModel Builder</h3>
+        <p>Set every available parameter of the model using the builder pattern. Parameters include API key, model name, temperature, timeout, and logging flags.</p>
+      </div>
+      <div class="zh-col">
+        <span class="col-tag">中文</span>
+        <h3>OpenAiChatModel 构建器</h3>
+        <p>使用构建器模式设置模型的每个可用参数，包括 API 密钥、模型名称、温度、超时和日志标志。</p>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-header">
+        <span class="code-dots"><span></span><span></span><span></span></span>
+        <span>OpenAiChatModel.java</span>
+      </div>
+      <pre><span class="type">OpenAiChatModel</span> model = <span class="type">OpenAiChatModel</span>.<span class="fn">builder</span>()
+    .<span class="fn">apiKey</span>(<span class="type">System</span>.<span class="fn">getenv</span>(<span class="str">"OPENAI_API_KEY"</span>))
+    .<span class="fn">modelName</span>(<span class="str">"gpt-4o-mini"</span>)
+    .<span class="fn">temperature</span>(<span class="num">0.3</span>)
+    .<span class="fn">timeout</span>(<span class="fn">ofSeconds</span>(<span class="num">60</span>))
+    .<span class="fn">logRequests</span>(<span class="kw">true</span>)
+    .<span class="fn">logResponses</span>(<span class="kw">true</span>)
+    .<span class="fn">build</span>();</pre>
+    </div>
+  </section>
+
+  <!-- ─── Quarkus ─── -->
+  <section class="section" id="quarkus">
+    <div class="section-num">05</div>
+    <h2>
+      Setting Parameters in Quarkus
+      <span class="zh">在 Quarkus 中设置参数</span>
+    </h2>
+    <p class="section-lead">
+      LangChain4j parameters in Quarkus applications can be set in the <code>application.properties</code> file.
+    </p>
+
+    <div class="fw-cards">
+      <div class="fw-card">
+        <span class="fw-icon quarkus">Quarkus Config</span>
+        <h4>application.properties</h4>
+        <p>Configure model parameters directly in the properties file. The <strong>DEV UI</strong> dashboard allows live tweaking — changes are immediately reflected in your running instance and automatically ported to code.</p>
+        <p style="margin-top: 8px; color: var(--white-faint);">在属性文件中直接配置模型参数。DEV UI 仪表板支持实时调整——更改会立即反映到运行实例并自动同步到代码。</p>
+      </div>
+      <div class="fw-card">
+        <span class="fw-icon spring">Spring Boot Config</span>
+        <h4>application.properties</h4>
+        <p>If you are using one of our Spring Boot starters, configure model parameters in the properties file. The complete list of supported properties can be found in the official documentation.</p>
+        <p style="margin-top: 8px; color: var(--white-faint);">若使用 Spring Boot 启动器，可在属性文件中配置模型参数。完整属性列表请参阅官方文档。</p>
+      </div>
+    </div>
+
+    <div class="bilingual">
+      <div class="en-col">
+        <span class="col-tag">EN</span>
+        <h3>Quarkus Configuration</h3>
+        <p>Parameters can be set in <code>application.properties</code>. The <strong>DEV UI</strong> (accessible at <code>localhost:8080/q/dev-ui</code> when running <code>quarkus dev</code>) lets you tweak parameters live — changes reflect immediately and are auto-ported to code.</p>
+      </div>
+      <div class="zh-col">
+        <span class="col-tag">中文</span>
+        <h3>Quarkus 配置</h3>
+        <p>参数可在 <code>application.properties</code> 中设置。运行 <code>quarkus dev</code> 后，可通过 <strong>DEV UI</strong>（<code>localhost:8080/q/dev-ui</code>）实时调整参数——更改立即生效并自动同步到代码。</p>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-header">
+        <span class="code-dots"><span></span><span></span><span></span></span>
+        <span>application.properties (Quarkus)</span>
+      </div>
+      <pre><span class="cmt"># Quarkus LangChain4j Configuration</span>
+<span class="type">quarkus.langchain4j.openai.api-key</span>=<span class="str">${OPENAI_API_KEY}</span>
+<span class="type">quarkus.langchain4j.openai.chat-model.temperature</span>=<span class="num">0.5</span>
+<span class="type">quarkus.langchain4j.openai.timeout</span>=<span class="str">60s</span></pre>
+    </div>
+
+    <div class="note">
+      <strong>DEV UI</strong> — For debugging, tweaking, or exploring all available parameters, use the Quarkus DEV UI. Run <code>quarkus dev</code> and navigate to <code>localhost:8080/q/dev-ui</code>. Changes are immediately reflected and auto-ported to your code.
+      <span class="zh">用于调试、微调或探索所有可用参数。运行 quarkus dev 并访问 localhost:8080/q/dev-ui，更改立即生效并自动同步到代码。</span>
+    </div>
+  </section>
+
+  <!-- ─── Spring Boot ─── -->
+  <section class="section" id="spring">
+    <div class="section-num">06</div>
+    <h2>
+      Setting Parameters in Spring Boot
+      <span class="zh">在 Spring Boot 中设置参数</span>
+    </h2>
+    <p class="section-lead">
+      If you are using one of our Spring Boot starters, you can configure model parameters in the <code>application.properties</code> file.
+    </p>
+
+    <div class="bilingual">
+      <div class="en-col">
+        <span class="col-tag">EN</span>
+        <h3>Spring Boot Configuration</h3>
+        <p>Configure model parameters using the <code>langchain4j.open-ai.chat-model.*</code> property prefix in <code>application.properties</code>. The complete list of supported properties can be found in the official documentation.</p>
+      </div>
+      <div class="zh-col">
+        <span class="col-tag">中文</span>
+        <h3>Spring Boot 配置</h3>
+        <p>使用 <code>langchain4j.open-ai.chat-model.*</code> 属性前缀在 <code>application.properties</code> 中配置模型参数。完整属性列表请参阅官方文档。</p>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-header">
+        <span class="code-dots"><span></span><span></span><span></span></span>
+        <span>application.properties (Spring Boot)</span>
+      </div>
+      <pre><span class="cmt"># Spring Boot LangChain4j Configuration</span>
+<span class="type">langchain4j.open-ai.chat-model.api-key</span>=<span class="str">${OPENAI_API_KEY}</span>
+<span class="type">langchain4j.open-ai.chat-model.model-name</span>=<span class="str">gpt-4-1106-preview</span>
+<span class="cmt">...</span></pre>
+    </div>
+
+    <div class="note">
+      <strong>More info</strong> — Quarkus integration details and Spring Boot integration details can be found in the official LangChain4j documentation.
+      <span class="zh">Quarkus 和 Spring Boot 集成的更多信息请参阅 LangChain4j 官方文档。</span>
+    </div>
+  </section>
+
+</main>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer class="footer">
+  <div class="footer-inner">
+    <p>Based on <a href="https://docs.langchain4j.dev" target="_blank" rel="noopener">LangChain4j Official Documentation</a> — Model Parameters</p>
+    <p style="margin-top: 4px;">中英双语翻译版 · Bilingual Edition · 2026</p>
+  </div>
+</footer>
+
+<script>
+// Smooth scroll
+document.querySelectorAll('.nav-link').forEach(link => {
+  link.addEventListener('click', function(e) {
+    e.preventDefault();
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+
+// Intersection Observer for entrance animations
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.style.opacity = '1';
+      entry.target.style.transform = 'translateY(0)';
+    }
+  });
+}, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
+
+document.querySelectorAll('.bilingual, .fw-card, .code-block, .table-wrap, .note').forEach(el => {
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(20px)';
+  el.style.transition = 'opacity 0.5s ease-out, transform 0.5s ease-out';
+  observer.observe(el);
+});
+
+// Trigger immediate animations for elements in viewport on load
+window.addEventListener('load', () => {
+  document.querySelectorAll('.bilingual, .fw-card, .code-block, .table-wrap, .note').forEach(el => {
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight) {
+      el.style.opacity = '1';
+      el.style.transform = 'translateY(0)';
+    }
+  });
+});
+</script>
+
+</body>
+</html>
