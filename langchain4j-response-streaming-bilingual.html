@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LangChain4j — Response Streaming / 响应流式传输</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e0a;
+  --bg-elevated: #0e130e;
+  --bg-card: #111711;
+  --green: #3ce06b;
+  --green-dim: #1f7a3a;
+  --green-glow: #7dffa0;
+  --cyan: #39d0d8;
+  --cyan-dim: #1e8a90;
+  --amber: #e8a840;
+  --amber-dim: #9a6a20;
+  --pink: #e0558a;
+  --pink-dim: #8a3050;
+  --white: #c8dcc8;
+  --white-dim: #7a927a;
+  --white-faint: #3a4a3a;
+  --border: #1a2a1a;
+  --border-active: #2a4a2a;
+  --code-bg: #080c08;
+  --code-border: #1a2a1a;
+  --scanline: rgba(60, 224, 107, 0.015);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 30px rgba(60, 224, 107, 0.04);
+  --radius: 2px;
+  --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  background: var(--bg);
+}
+
+body {
+  font-family: 'Space Mono', 'Noto Sans SC', monospace;
+  color: var(--white);
+  background: var(--bg);
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* ── Scanlines ── */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.04;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.5) 2px,
+    rgba(0, 0, 0, 0.5) 4px
+  );
+}
+
+/* ── Vignette ── */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 9998;
+  background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.4) 100%);
+}
+
+/* ── Hero ── */
+.hero {
+  position: relative;
+  background: linear-gradient(180deg, #0d160d 0%, var(--bg) 100%);
+  padding: 90px 0 70px;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border);
+  z-index: 1;
+}
+
+.hero-stream {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  opacity: 0.25;
+}
+
+.hero-stream .stream-line {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--green-dim), var(--green), var(--green-dim), transparent);
+  opacity: 0;
+}
+
+.hero-stream .stream-line:nth-child(1) { top: 18%; animation: streamPulse 4s ease-in-out infinite; }
+.hero-stream .stream-line:nth-child(2) { top: 38%; animation: streamPulse 4s ease-in-out 0.6s infinite; }
+.hero-stream .stream-line:nth-child(3) { top: 55%; animation: streamPulse 4s ease-in-out 1.2s infinite; }
+.hero-stream .stream-line:nth-child(4) { top: 72%; animation: streamPulse 4s ease-in-out 1.8s infinite; }
+.hero-stream .stream-line:nth-child(5) { top: 88%; animation: streamPulse 4s ease-in-out 2.4s infinite; }
+
+@keyframes streamPulse {
+  0%, 100% { opacity: 0.05; }
+  50% { opacity: 0.3; }
+}
+
+/* Blinking cursor indicator */
+.cursor-indicator {
+  display: inline-block;
+  width: 8px;
+  height: 16px;
+  background: var(--green);
+  margin-left: 4px;
+  animation: blink 1s step-end infinite;
+  vertical-align: middle;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.hero-inner {
+  position: relative;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 40px;
+  z-index: 2;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Share Tech Mono', 'Space Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 24px;
+  animation: fadeIn 0.6s ease-out;
+}
+
+.hero-badge .dot {
+  width: 6px; height: 6px;
+  background: var(--green);
+  border-radius: 50%;
+  animation: blink 1.5s step-end infinite;
+  box-shadow: 0 0 8px var(--green);
+}
+
+.hero-badge::after {
+  content: 'LIVE';
+  font-size: 8px;
+  padding: 2px 6px;
+  border: 1px solid var(--green);
+  color: var(--green);
+  letter-spacing: 2px;
+  animation: blink 2s step-end infinite;
+}
+
+.hero h1 {
+  font-family: 'Share Tech Mono', 'Noto Serif SC', monospace;
+  font-size: clamp(34px, 5.5vw, 58px);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -1px;
+  color: var(--white);
+  margin-bottom: 10px;
+  animation: fadeIn 0.6s ease-out 0.1s both;
+}
+
+.hero h1 .zh {
+  display: block;
+  font-size: 0.42em;
+  font-weight: 500;
+  color: var(--green-dim);
+  margin-top: 4px;
+  letter-spacing: 3px;
+  font-family: 'Noto Serif SC', 'Space Mono', serif;
+}
+
+.hero-subtitle {
+  font-family: 'Space Mono', 'Noto Sans SC', monospace;
+  font-size: 13px;
+  color: var(--white-dim);
+  max-width: 560px;
+  line-height: 1.65;
+  animation: fadeIn 0.6s ease-out 0.2s both;
+}
+
+.hero-subtitle .zh {
+  display: block;
+  margin-top: 6px;
+  color: var(--white-faint);
+  font-size: 0.9em;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Nav ── */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10, 14, 10, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 40px;
+}
+
+.nav-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  overflow-x: auto;
+  padding: 10px 0;
+  scrollbar-width: none;
+}
+
+.nav-inner::-webkit-scrollbar { display: none; }
+
+.nav-link {
+  font-family: 'Share Tech Mono', 'Noto Sans SC', monospace;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--white-dim);
+  text-decoration: none;
+  padding: 5px 14px;
+  white-space: nowrap;
+  transition: var(--transition);
+  letter-spacing: 0.5px;
+  border: 1px solid transparent;
+  position: relative;
+}
+
+.nav-link:hover {
+  color: var(--green);
+  border-color: var(--green-dim);
+  background: rgba(60, 224, 107, 0.03);
+  text-shadow: 0 0 8px rgba(60, 224, 107, 0.3);
+}
+
+/* ── Main ── */
+.main {
+  position: relative;
+  z-index: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 40px 80px;
+}
+
+.section {
+  margin-top: 80px;
+  scroll-margin-top: 80px;
+}
+
+.section:first-of-type { margin-top: 60px; }
+
+.section-num {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 400;
+  color: var(--green);
+  letter-spacing: 3px;
+  margin-bottom: 6px;
+}
+
+.section h2 {
+  font-family: 'Share Tech Mono', 'Noto Serif SC', monospace;
+  font-size: clamp(24px, 3.5vw, 32px);
+  font-weight: 400;
+  color: var(--white);
+  margin-bottom: 6px;
+  line-height: 1.25;
+  letter-spacing: -0.5px;
+}
+
+.section h2 .zh {
+  display: block;
+  font-size: 0.45em;
+  font-weight: 500;
+  color: var(--green-dim);
+  margin-top: 2px;
+  letter-spacing: 2px;
+}
+
+.section-lead {
+  font-family: 'Space Mono', 'Noto Sans SC', monospace;
+  font-size: 13px;
+  color: var(--white-dim);
+  max-width: 680px;
+  margin-bottom: 32px;
+  line-height: 1.7;
+}
+
+/* ── Bilingual Block ── */
+.bilingual {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-card);
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.bilingual:hover {
+  border-color: var(--border-active);
+  box-shadow: var(--shadow-card), var(--shadow-glow);
+}
+
+.bilingual::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--green-dim), transparent);
+  opacity: 0.5;
+}
+
+.en-col, .zh-col {
+  padding: 26px 30px;
+  position: relative;
+}
+
+.en-col {
+  background: var(--bg-card);
+  border-right: 1px solid var(--border);
+}
+
+.zh-col {
+  background: rgba(10, 14, 10, 0.7);
+}
+
+.col-tag {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  display: inline-block;
+  padding: 2px 10px;
+  border: 1px solid;
+}
+
+.en-col .col-tag {
+  color: var(--green);
+  border-color: var(--green-dim);
+}
+
+.zh-col .col-tag {
+  color: var(--cyan);
+  border-color: var(--cyan-dim);
+}
+
+.bilingual h3 {
+  font-family: 'Share Tech Mono', 'Noto Serif SC', monospace;
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--white);
+  margin-bottom: 10px;
+  line-height: 1.35;
+  letter-spacing: 0.3px;
+}
+
+.bilingual p {
+  font-size: 12.5px;
+  color: var(--white-dim);
+  line-height: 1.75;
+  margin-bottom: 9px;
+}
+
+.bilingual p:last-child { margin-bottom: 0; }
+
+.bilingual strong {
+  color: var(--white);
+  font-weight: 700;
+}
+
+.bilingual code {
+  font-family: 'Share Tech Mono', 'Space Mono', monospace;
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px;
+  border: 1px solid var(--code-border);
+  border-radius: 2px;
+  color: var(--cyan);
+}
+
+.bilingual ul {
+  list-style: none;
+  padding: 0;
+  margin-top: 6px;
+}
+
+.bilingual ul li {
+  font-size: 12.5px;
+  color: var(--white-dim);
+  padding: 3px 0 3px 16px;
+  position: relative;
+  line-height: 1.6;
+}
+
+.bilingual ul li::before {
+  content: '>';
+  position: absolute;
+  left: 0;
+  color: var(--green-dim);
+  font-weight: 400;
+  font-family: 'Share Tech Mono', monospace;
+}
+
+/* ── Code Block ── */
+.code-block {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  margin: 16px 0 20px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: var(--shadow-card);
+}
+
+.code-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 16px;
+  background: rgba(0,0,0,0.3);
+  border-bottom: 1px solid var(--code-border);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--white-faint);
+  letter-spacing: 0.5px;
+}
+
+.code-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.code-dots span {
+  display: block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  opacity: 0.6;
+}
+
+.code-dots span:nth-child(1) { background: var(--green); }
+.code-dots span:nth-child(2) { background: var(--amber); }
+.code-dots span:nth-child(3) { background: var(--pink); }
+
+.code-block pre {
+  padding: 18px 22px;
+  margin: 0;
+  overflow-x: auto;
+  font-family: 'Share Tech Mono', 'Space Mono', 'Courier New', monospace;
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: var(--white);
+  tab-size: 4;
+}
+
+.code-block pre .kw { color: var(--pink); }
+.code-block pre .type { color: var(--cyan); }
+.code-block pre .str { color: var(--amber); }
+.code-block pre .cmt { color: var(--white-faint); font-style: italic; }
+.code-block pre .fn { color: var(--green); }
+.code-block pre .ann { color: var(--amber-dim); }
+.code-block pre .num { color: var(--cyan-dim); }
+
+/* ── Note ── */
+.note {
+  background: rgba(60, 224, 107, 0.02);
+  border: 1px solid rgba(60, 224, 107, 0.12);
+  border-left: 3px solid var(--green);
+  padding: 15px 20px;
+  margin: 20px 0;
+  font-size: 12.5px;
+  color: var(--white-dim);
+  line-height: 1.7;
+}
+
+.note strong {
+  color: var(--green);
+  font-weight: 700;
+}
+
+.note .zh {
+  display: block;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(60, 224, 107, 0.08);
+  color: var(--white-faint);
+  font-size: 0.93em;
+}
+
+/* ── Handler Interface ── */
+.handler-methods {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 20px 0 24px;
+}
+
+.handler-method {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 16px 18px;
+  box-shadow: var(--shadow-card);
+  transition: var(--transition);
+  position: relative;
+}
+
+.handler-method:hover {
+  border-color: var(--border-active);
+}
+
+.handler-method .method-name {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: var(--green);
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+}
+
+.handler-method .method-name code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: var(--green);
+}
+
+.handler-method p {
+  font-size: 11.5px;
+  color: var(--white-dim);
+  line-height: 1.55;
+}
+
+.handler-method p.zh-desc {
+  color: var(--white-faint);
+  margin-top: 4px;
+  font-size: 11px;
+}
+
+/* ── Lambda Cards ── */
+.lambda-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 20px 0 24px;
+}
+
+.lambda-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 22px;
+  box-shadow: var(--shadow-card);
+  transition: var(--transition);
+}
+
+.lambda-card:hover {
+  border-color: var(--border-active);
+  box-shadow: var(--shadow-card), var(--shadow-glow);
+}
+
+.lambda-card .lambda-icon {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  display: inline-block;
+  padding: 2px 10px;
+  border: 1px solid var(--border-active);
+  color: var(--cyan);
+}
+
+.lambda-card h4 {
+  font-family: 'Share Tech Mono', 'Noto Serif SC', monospace;
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--white);
+  margin-bottom: 8px;
+}
+
+.lambda-card p {
+  font-size: 12px;
+  color: var(--white-dim);
+  line-height: 1.6;
+}
+
+/* ── Footer ── */
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 36px 40px;
+  text-align: center;
+  margin-top: 80px;
+  position: relative;
+  z-index: 1;
+}
+
+.footer-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  font-size: 11.5px;
+  color: var(--white-faint);
+  font-family: 'Share Tech Mono', 'Space Mono', monospace;
+}
+
+.footer-inner a {
+  color: var(--green);
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+.footer-inner a:hover { color: var(--green-glow); }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .hero { padding: 60px 0 50px; }
+  .hero-inner, .main, .nav { padding-left: 20px; padding-right: 20px; }
+
+  .bilingual {
+    grid-template-columns: 1fr;
+  }
+
+  .en-col {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .handler-methods,
+  .lambda-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-stream { display: none; }
+}
+
+@media (max-width: 480px) {
+  .nav-inner { gap: 0; }
+  .nav-link { font-size: 10px; padding: 4px 8px; letter-spacing: 0; }
+  .en-col, .zh-col { padding: 18px; }
+}
+
+@media print {
+  body::before, body::after, .hero-stream { display: none; }
+  .nav { position: static; }
+  .bilingual { break-inside: avoid; }
+  body { background: #fff; color: #000; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ HERO ═══════════════ -->
+<section class="hero">
+  <div class="hero-stream">
+    <div class="stream-line"></div>
+    <div class="stream-line"></div>
+    <div class="stream-line"></div>
+    <div class="stream-line"></div>
+    <div class="stream-line"></div>
+  </div>
+  <div class="hero-inner">
+    <div class="hero-badge">
+      <span class="dot"></span>
+      LangChain4j · Streaming
+    </div>
+    <h1>
+      Response Streaming<span class="cursor-indicator"></span>
+      <span class="zh">响应流式传输</span>
+    </h1>
+    <p class="hero-subtitle">
+      Stream LLM responses token-by-token for instant user feedback. Implement StreamingChatResponseHandler to handle partial responses, thinking, tool calls, and more.
+      <span class="zh">逐 token 流式传输 LLM 响应，实现即时用户反馈。通过 StreamingChatResponseHandler 处理部分响应、思考、工具调用等。</span>
+    </p>
+  </div>
+</section>
+
+<!-- ═══════════════ NAV ═══════════════ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#overview" class="nav-link">Overview / 概述</a>
+    <a href="#handler" class="nav-link">Handler / 处理器</a>
+    <a href="#handler-methods" class="nav-link">Events / 事件</a>
+    <a href="#example" class="nav-link">Example / 示例</a>
+    <a href="#lambda" class="nav-link">Lambda / 简化</a>
+    <a href="#cancel" class="nav-link">Cancel / 取消</a>
+  </div>
+</nav>
+
+<!-- ═══════════════ MAIN ═══════════════ -->
+<main class="main">
+
+  <!-- ─── Overview ─── -->
+  <section class="section" id="overview">
+    <div class="section-num">01</div>
+    <h2>
+      Overview
+      <span class="zh">概述</span>
+    </h2>
+    <p class="section-lead">
+      LLMs generate text one token at a time. Streaming the response token-by-token significantly improves UX — users can start reading almost immediately instead of waiting for the entire text.
+    </p>
+
+    <div class="bilingual">
+      <div class="en-col">
+        <span class="col-tag">EN</span>
+        <h3>Why Streaming?</h3>
+        <p>LLMs generate text <strong>one token at a time</strong>, so many LLM providers offer a way to stream the response token-by-token instead of waiting for the entire text to be generated. This significantly improves the user experience, as the user does not need to wait an unknown amount of time and can start reading the response almost immediately.</p>
+        <p>For the <code>ChatModel</code> and <code>LanguageModel</code> interfaces, there are corresponding <strong>StreamingChatModel</strong> and <strong>StreamingLanguageModel</strong> interfaces. These have a similar API but can stream the responses. They accept an implementation of the <code>StreamingChatResponseHandler</code> interface as an argument.</p>
+      </div>
+      <div class="zh-col">
+        <span class="col-tag">中文</span>
+        <h3>为什么要流式传输？</h3>
+        <p>LLM 是<strong>逐 token</strong> 生成文本的，因此许多 LLM 提供商提供了逐 token 流式传输响应的方式，而不是等待整个文本生成完毕。这显著改善了用户体验——用户无需等待未知的时间，几乎可以立即开始阅读响应。</p>
+        <p><code>ChatModel</code> 和 <code>LanguageModel</code> 接口分别有对应的 <strong>StreamingChatModel</strong> 和 <strong>StreamingLanguageModel</strong> 接口。它们的 API 类似，但可以流式传输响应，并接受 <code>StreamingChatResponseHandler</code> 接口的实现作为参数。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Handler Interface ─── -->
+  <section class="section" id="handler">
+    <div class="section-num">02</div>
+    <h2>
+      StreamingChatResponseHandler
+      <span class="zh">流式聊天响应处理器</span>
+    </h2>
+    <p class="section-lead">
+      The core interface for handling streaming responses. Implement it to define actions for each streaming event.
+    </p>
+
+    <div class="bilingual">
+      <div class="en-col">
+        <span class="col-tag">EN</span>
+        <h3>Interface Definition</h3>
+        <p>By implementing <code>StreamingChatResponseHandler</code>, you can define actions for the following events:</p>
+        <ul>
+          <li><strong>Partial textual response</strong> — <code>onPartialResponse(String)</code> or <code>onPartialResponse(PartialResponse, PartialResponseContext)</code></li>
+          <li><strong>Partial thinking/reasoning</strong> — <code>onPartialThinking(PartialThinking)</code> or with context</li>
+          <li><strong>Partial tool call</strong> — <code>onPartialToolCall(PartialToolCall)</code> or with context</li>
+          <li><strong>Complete tool call</strong> — <code>onCompleteToolCall(CompleteToolCall)</code></li>
+          <li><strong>Complete response</strong> — <code>onCompleteResponse(ChatResponse)</code></li>
+          <li><strong>Error</strong> — <code>onError(Throwable)</code></li>
+        </ul>
+      </div>
+      <div class="zh-col">
+        <span class="col-tag">中文</span>
+        <h3>接口定义</h3>
+        <p>通过实现 <code>StreamingChatResponseHandler</code>，你可以为以下事件定义操作：</p>
+        <ul>
+          <li><strong>部分文本响应</strong> — <code>onPartialResponse(String)</code> 或带上下文版本</li>
+          <li><strong>部分思考/推理</strong> — <code>onPartialThinking(PartialThinking)</code> 或带上下文版本</li>
+          <li><strong>部分工具调用</strong> — <code>onPartialToolCall(PartialToolCall)</code> 或带上下文版本</li>
+          <li><strong>完整工具调用</strong> — <code>onCompleteToolCall(CompleteToolCall)</code></li>
+          <li><strong>完整响应</strong> — <code>onCompleteResponse(ChatResponse)</code></li>
+          <li><strong>错误</strong> — <code>onError(Throwable)</code></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-header">
+        <span class="code-dots"><span></span><span></span><span></span></span>
+        <span>StreamingChatResponseHandler.java</span>
+      </div>
+      <pre><span class="kw">public interface</span> <span class="type">StreamingChatResponseHandler</span> {
+
+    <span class="kw">default void</span> <span class="fn">onPartialResponse</span>(<span class="type">String</span> partialResponse) {}
+    <span class="kw">default void</span> <span class="fn">onPartialResponse</span>(<span class="type">PartialResponse</span> partialResponse, <span class="type">PartialResponseContext</span> context) {}
+
+    <span class="kw">default void</span> <span class="fn">onPartialThinking</span>(<span class="type">PartialThinking</span> partialThinking) {}
+    <span class="kw">default void</span> <span class="fn">onPartialThinking</span>(<span class="type">PartialThinking</span> partialThinking, <span class="type">PartialThinkingContext</span> context) {}
+
+    <span class="kw">default void</span> <span class="fn">onPartialToolCall</span>(<span class="type">PartialToolCall</span> partialToolCall) {}
+    <span class="kw">default void</span> <span class="fn">onPartialToolCall</span>(<span class="type">PartialToolCall</span> partialToolCall, <span class="type">PartialToolCallContext</span> context) {}
+
+    <span class="kw">default void</span> <span class="fn">onCompleteToolCall</span>(<span class="type">CompleteToolCall</span> completeToolCall) {}
+
+    <span class="kw">void</span> <span class="fn">onCompleteResponse</span>(<span class="type">ChatResponse</span> completeResponse);
+
+    <span class="kw">void</span> <span class="fn">onError</span>(<span class="type">Throwable</span> error);
+}</pre>
+    </div>
+  </section>
+
+  <!-- ─── Event Details ─── -->
+  <section class="section" id="handler-methods">
+    <div class="section-num">03</div>
+    <h2>
+      Handler Events
+      <span class="zh">处理器事件</span>
+    </h2>
+    <p class="section-lead">
+      Each event in the handler corresponds to a specific moment in the streaming lifecycle. All methods except <code>onCompleteResponse</code> and <code>onError</code> are default methods.
+    </p>
+
+    <div class="handler-methods">
+      <div class="handler-method">
+        <div class="method-name"><code>onPartialResponse</code></div>
+        <p>Invoked when the next partial textual response is generated. Partial response text can consist of a single or more tokens. You can send the token directly to the UI as soon as it becomes available.</p>
+        <p class="zh-desc">下一个部分文本响应生成时调用。可将 token 直接发送到 UI。</p>
+      </div>
+
+      <div class="handler-method">
+        <div class="method-name"><code>onPartialThinking</code></div>
+        <p>Invoked when the next partial thinking/reasoning text is generated. Partial thinking text can consist of a single or more tokens.</p>
+        <p class="zh-desc">下一个部分思考/推理文本生成时调用。</p>
+      </div>
+
+      <div class="handler-method">
+        <div class="method-name"><code>onPartialToolCall</code></div>
+        <p>Invoked when the next partial tool call is generated. Useful for showing real-time progress of tool invocations.</p>
+        <p class="zh-desc">下一个部分工具调用生成时调用，可用于展示工具调用实时进度。</p>
+      </div>
+
+      <div class="handler-method">
+        <div class="method-name"><code>onCompleteToolCall</code></div>
+        <p>Invoked when the LLM has completed streaming for a single tool call. The <code>CompleteToolCall</code> contains the full tool call information.</p>
+        <p class="zh-desc">LLM 完成单个工具调用的流式传输时调用，包含完整工具调用信息。</p>
+      </div>
+
+      <div class="handler-method">
+        <div class="method-name"><code>onCompleteResponse</code></div>
+        <p>Invoked when the LLM has completed generation. The <code>ChatResponse</code> object contains the complete response (<code>AiMessage</code>) as well as <code>ChatResponseMetadata</code>.</p>
+        <p class="zh-desc">LLM 完成生成时调用，包含完整的 AiMessage 和元数据。</p>
+      </div>
+
+      <div class="handler-method">
+        <div class="method-name"><code>onError</code></div>
+        <p>Invoked when an error occurs during streaming. Handle exceptions gracefully here — logging, retry logic, or user notification.</p>
+        <p class="zh-desc">流式传输发生错误时调用，用于日志记录、重试或用户通知。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Full Example ─── -->
+  <section class="section" id="example">
+    <div class="section-num">04</div>
+    <h2>
+      Full Example
+      <span class="zh">完整示例</span>
+    </h2>
+    <p class="section-lead">
+      Below is an example of how to implement streaming with <code>StreamingChatModel</code> using the full handler implementation.
+    </p>
+
+    <div class="bilingual">
+      <div class="en-col">
+        <span class="col-tag">EN</span>
+        <h3>StreamingChatModel with Full Handler</h3>
+        <p>Create an <code>OpenAiStreamingChatModel</code> and pass a <code>StreamingChatResponseHandler</code> implementation. Each callback receives the streaming data as it arrives.</p>
+      </div>
+      <div class="zh-col">
+        <span class="col-tag">中文</span>
+        <h3>StreamingChatModel 与完整处理器</h3>
+        <p>创建 <code>OpenAiStreamingChatModel</code> 并传入 <code>StreamingChatResponseHandler</code> 实现。每个回调在数据到达时接收流式数据。</p>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-header">
+        <span class="code-dots"><span></span><span></span><span></span></span>
+        <span>StreamingChatModel Example</span>
+      </div>
+      <pre><span class="type">StreamingChatModel</span> model = <span class="type">OpenAiStreamingChatModel</span>.<span class="fn">builder</span>()
+    .<span class="fn">apiKey</span>(<span class="type">System</span>.<span class="fn">getenv</span>(<span class="str">"OPENAI_API_KEY"</span>))
+    .<span class="fn">modelName</span>(<span class="str">GPT_4_O_MINI</span>)
+    .<span class="fn">build</span>();
+
+<span class="type">String</span> userMessage = <span class="str">"Tell me a joke"</span>;
+
+model.<span class="fn">chat</span>(userMessage, <span class="kw">new</span> <span class="type">StreamingChatResponseHandler</span>() {
+
+    <span class="ann">@Override</span>
+    <span class="kw">public void</span> <span class="fn">onPartialResponse</span>(<span class="type">String</span> partialResponse) {
+        <span class="type">System</span>.out.<span class="fn">println</span>(<span class="str">"onPartialResponse: "</span> + partialResponse);
+    }
+
+    <span class="ann">@Override</span>
+    <span class="kw">public void</span> <span class="fn">onPartialThinking</span>(<span class="type">PartialThinking</span> partialThinking) {
+        <span class="type">System</span>.out.<span class="fn">println</span>(<span class="str">"onPartialThinking: "</span> + partialThinking);
+    }
+
+    <span class="ann">@Override</span>
+    <span class="kw">public void</span> <span class="fn">onPartialToolCall</span>(<span class="type">PartialToolCall</span> partialToolCall) {
+        <span class="type">System</span>.out.<span class="fn">println</span>(<span class="str">"onPartialToolCall: "</span> + partialToolCall);
+    }
+
+    <span class="ann">@Override</span>
+    <span class="kw">public void</span> <span class="fn">onCompleteToolCall</span>(<span class="type">CompleteToolCall</span> completeToolCall) {
+        <span class="type">System</span>.out.<span class="fn">println</span>(<span class="str">"onCompleteToolCall: "</span> + completeToolCall);
+    }
+
+    <span class="ann">@Override</span>
+    <span class="kw">public void</span> <span class="fn">onCompleteResponse</span>(<span class="type">ChatResponse</span> completeResponse) {
+        <span class="type">System</span>.out.<span class="fn">println</span>(<span class="str">"onCompleteResponse: "</span> + completeResponse);
+    }
+
+    <span class="ann">@Override</span>
+    <span class="kw">public void</span> <span class="fn">onError</span>(<span class="type">Throwable</span> error) {
+        error.<span class="fn">printStackTrace</span>();
+    }
+});</pre>
+    </div>
+  </section>
+
+  <!-- ─── Lambda ─── -->
+  <section class="section" id="lambda">
+    <div class="section-num">05</div>
+    <h2>
+      LambdaStreamingResponseHandler
+      <span class="zh">Lambda 流式响应处理器</span>
+    </h2>
+    <p class="section-lead">
+      A more compact way to stream the response using lambda expressions. The <code>LambdaStreamingResponseHandler</code> utility class provides static methods.
+    </p>
+
+    <div class="lambda-cards">
+      <div class="lambda-card">
+        <span class="lambda-icon">onPartialResponse</span>
+        <h4>onPartialResponse</h4>
+        <p>Define actions for partial responses with a single lambda. The <code>onPartialResponse()</code> static method accepts a lambda that defines what to do with the partial response.</p>
+        <p style="margin-top: 8px; color: var(--white-faint);">使用单个 lambda 定义部分响应操作。onPartialResponse() 静态方法接受一个 lambda 表达式。</p>
+      </div>
+
+      <div class="lambda-card">
+        <span class="lambda-icon">onPartialResponseAndError</span>
+        <h4>onPartialResponseAndError</h4>
+        <p>Define actions for both <code>onPartialResponse()</code> and <code>onError()</code> events. The <code>onPartialResponseAndError()</code> method accepts two lambdas for partial response handling and error handling.</p>
+        <p style="margin-top: 8px; color: var(--white-faint);">同时定义 onPartialResponse() 和 onError() 两个事件的操作。接受两个 lambda 分别处理部分响应和错误。</p>
+      </div>
+    </div>
+
+    <div class="bilingual">
+      <div class="en-col">
+        <span class="col-tag">EN</span>
+        <h3>Simple Lambda</h3>
+        <p>You just call the <code>onPartialResponse()</code> static method with a lambda expression. This is the most compact way to stream.</p>
+      </div>
+      <div class="zh-col">
+        <span class="col-tag">中文</span>
+        <h3>简单 Lambda</h3>
+        <p>只需调用 <code>onPartialResponse()</code> 静态方法并传入 lambda 表达式。这是最简洁的流式传输方式。</p>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-header">
+        <span class="code-dots"><span></span><span></span><span></span></span>
+        <span>LambdaStreamingResponseHandler Examples</span>
+      </div>
+      <pre><span class="cmt">// Simple: handle partial response only</span>
+<span class="kw">import static</span> dev.langchain4j.model.<span class="type">LambdaStreamingResponseHandler</span>.<span class="fn">onPartialResponse</span>;
+
+model.<span class="fn">chat</span>(<span class="str">"Tell me a joke"</span>, <span class="fn">onPartialResponse</span>(<span class="type">System</span>.out::<span class="fn">print</span>));
+
+<span class="cmt">// With error handling</span>
+<span class="kw">import static</span> dev.langchain4j.model.<span class="type">LambdaStreamingResponseHandler</span>.<span class="fn">onPartialResponseAndError</span>;
+
+model.<span class="fn">chat</span>(<span class="str">"Tell me a joke"</span>, <span class="fn">onPartialResponseAndError</span>(
+    <span class="type">System</span>.out::<span class="fn">print</span>,
+    <span class="type">Throwable</span>::<span class="fn">printStackTrace</span>
+));</pre>
+    </div>
+  </section>
+
+  <!-- ─── Cancellation ─── -->
+  <section class="section" id="cancel">
+    <div class="section-num">06</div>
+    <h2>
+      Streaming Cancellation
+      <span class="zh">流式传输取消</span>
+    </h2>
+    <p class="section-lead">
+      If you wish to cancel the streaming, you can do so from the context-aware handler methods via <code>StreamingHandle.cancel()</code>.
+    </p>
+
+    <div class="bilingual">
+      <div class="en-col">
+        <span class="col-tag">EN</span>
+        <h3>How to Cancel</h3>
+        <p>If you wish to cancel the streaming, you can do so from one of the following methods:</p>
+        <ul>
+          <li><code>onPartialResponse(PartialResponse, PartialResponseContext)</code></li>
+          <li><code>onPartialThinking(PartialThinking, PartialThinkingContext)</code></li>
+          <li><code>onPartialToolCall(PartialToolCall, PartialToolCallContext)</code></li>
+        </ul>
+        <p>The context object contains the <strong>StreamingHandle</strong>, which can be used to cancel the streaming. When <code>StreamingHandle.cancel()</code> is called, LangChain4j will close the connection and stop the streaming. Once cancelled, <code>StreamingChatResponseHandler</code> will not receive any further callbacks.</p>
+      </div>
+      <div class="zh-col">
+        <span class="col-tag">中文</span>
+        <h3>如何取消</h3>
+        <p>如果需要取消流式传输，可以通过以下带上下文的方法之一进行：</p>
+        <ul>
+          <li><code>onPartialResponse(PartialResponse, PartialResponseContext)</code></li>
+          <li><code>onPartialThinking(PartialThinking, PartialThinkingContext)</code></li>
+          <li><code>onPartialToolCall(PartialToolCall, PartialToolCallContext)</code></li>
+        </ul>
+        <p>上下文对象包含 <strong>StreamingHandle</strong>，可用于取消流式传输。调用 <code>StreamingHandle.cancel()</code> 后，LangChain4j 将关闭连接并停止流式传输。一旦取消，<code>StreamingChatResponseHandler</code> 不会再收到任何回调。</p>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-header">
+        <span class="code-dots"><span></span><span></span><span></span></span>
+        <span>Streaming Cancellation Example</span>
+      </div>
+      <pre>model.<span class="fn">chat</span>(userMessage, <span class="kw">new</span> <span class="type">StreamingChatResponseHandler</span>() {
+
+    <span class="ann">@Override</span>
+    <span class="kw">public void</span> <span class="fn">onPartialResponse</span>(<span class="type">PartialResponse</span> partialResponse, <span class="type">PartialResponseContext</span> context) {
+        <span class="fn">process</span>(partialResponse);
+        <span class="kw">if</span> (<span class="fn">shouldCancel</span>()) {
+            context.<span class="fn">streamingHandle</span>().<span class="fn">cancel</span>();
+        }
+    }
+
+    <span class="ann">@Override</span>
+    <span class="kw">public void</span> <span class="fn">onCompleteResponse</span>(<span class="type">ChatResponse</span> completeResponse) {
+        <span class="type">System</span>.out.<span class="fn">println</span>(<span class="str">"onCompleteResponse: "</span> + completeResponse);
+    }
+
+    <span class="ann">@Override</span>
+    <span class="kw">public void</span> <span class="fn">onError</span>(<span class="type">Throwable</span> error) {
+        error.<span class="fn">printStackTrace</span>();
+    }
+});</pre>
+    </div>
+
+    <div class="note">
+      <strong>IMPORTANT</strong> — When <code>StreamingHandle.cancel()</code> is called, LangChain4j will close the connection and stop the streaming. Once <code>StreamingHandle.cancel()</code> has been called, <code>StreamingChatResponseHandler</code> will not receive any further callbacks.
+      <span class="zh">调用 StreamingHandle.cancel() 后，LangChain4j 将关闭连接并停止流式传输。一旦取消，StreamingChatResponseHandler 不会再收到任何回调。</span>
+    </div>
+  </section>
+
+</main>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer class="footer">
+  <div class="footer-inner">
+    <p>Based on <a href="https://docs.langchain4j.dev" target="_blank" rel="noopener">LangChain4j Official Documentation</a> — Response Streaming</p>
+    <p style="margin-top: 4px;">中英双语翻译版 · Bilingual Edition · 2026</p>
+  </div>
+</footer>
+
+<script>
+// Smooth scroll
+document.querySelectorAll('.nav-link').forEach(link => {
+  link.addEventListener('click', function(e) {
+    e.preventDefault();
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+
+// Intersection Observer for entrance animations
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.style.opacity = '1';
+      entry.target.style.transform = 'translateY(0)';
+    }
+  });
+}, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
+
+document.querySelectorAll('.bilingual, .handler-method, .lambda-card, .code-block, .note').forEach(el => {
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(20px)';
+  el.style.transition = 'opacity 0.5s ease-out, transform 0.5s ease-out';
+  observer.observe(el);
+});
+
+// Trigger immediate animations for elements in viewport on load
+window.addEventListener('load', () => {
+  document.querySelectorAll('.bilingual, .handler-method, .lambda-card, .code-block, .note').forEach(el => {
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight) {
+      el.style.opacity = '1';
+      el.style.transform = 'translateY(0)';
+    }
+  });
+});
+</script>
+
+</body>
+</html>
